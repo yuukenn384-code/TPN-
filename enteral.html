@@ -1,0 +1,2099 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>経管栄養プラン作成ツール v2</title>
+<style>
+:root {
+  --blue-dark: #1a365d;
+  --blue-mid: #2b6cb0;
+  --blue-light: #bee3f8;
+  --blue-bg: #ebf8ff;
+  --green-dark: #276749;
+  --green-mid: #38a169;
+  --green-light: #c6f6d5;
+  --green-bg: #f0fff4;
+  --orange-mid: #c05621;
+  --orange-bg: #fffaf0;
+  --red-mid: #c53030;
+  --red-light: #fed7d7;
+  --yellow-light: #fefcbf;
+  --gray-50: #f7fafc;
+  --gray-100: #edf2f7;
+  --gray-200: #e2e8f0;
+  --gray-300: #cbd5e0;
+  --gray-600: #718096;
+  --gray-700: #4a5568;
+  --gray-800: #2d3748;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Hiragino Sans', 'Yu Gothic UI', 'Meiryo', sans-serif;
+  font-size: 13px;
+  background: var(--gray-100);
+  color: var(--gray-800);
+  line-height: 1.5;
+}
+
+/* ── Header ── */
+.app-header {
+  background: linear-gradient(135deg, #1a4731 0%, #276749 100%);
+  color: white;
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+  print-color-adjust: exact;
+  -webkit-print-color-adjust: exact;
+}
+.app-header h1 { font-size: 16px; font-weight: 700; letter-spacing: .04em; }
+.app-header .subtitle { font-size: 10px; opacity: .75; margin-top: 1px; }
+.header-right { margin-left: auto; display: flex; gap: 6px; }
+.btn {
+  padding: 5px 12px; border: none; border-radius: 4px;
+  cursor: pointer; font-size: 12px; font-weight: 600;
+  transition: all .15s; font-family: inherit;
+}
+.btn-ghost {
+  background: rgba(255,255,255,.18); color: white;
+  border: 1px solid rgba(255,255,255,.35);
+}
+.btn-ghost:hover { background: rgba(255,255,255,.28); }
+.btn-primary {
+  background: var(--green-mid); color: white; border: none;
+  padding: 7px 16px; border-radius: 5px; font-size: 13px; font-weight: 700;
+  cursor: pointer; width: 100%; margin-top: 6px; font-family: inherit;
+  transition: background .15s;
+}
+.btn-primary:hover { background: var(--green-dark); }
+
+/* ── Main Layout ── */
+.main-layout {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  height: calc(100vh - 46px);
+  overflow: hidden;
+}
+
+/* ── Input Panel ── */
+.input-panel {
+  background: white;
+  border-right: 1px solid var(--gray-200);
+  overflow-y: auto;
+  padding: 10px;
+}
+
+/* ── Results Panel ── */
+.results-panel {
+  overflow-y: auto;
+  padding: 10px;
+}
+
+/* ── Card ── */
+.card {
+  background: white;
+  border-radius: 8px;
+  border: 1px solid var(--gray-200);
+  margin-bottom: 8px;
+  overflow: hidden;
+}
+.card-header {
+  background: var(--gray-100);
+  padding: 6px 12px;
+  font-weight: 700;
+  font-size: 11px;
+  border-bottom: 1px solid var(--gray-200);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--gray-700);
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+.card-body { padding: 10px 12px; }
+
+/* ── Form ── */
+.form-row { display: flex; gap: 8px; margin-bottom: 7px; align-items: flex-end; }
+.form-group { flex: 1; }
+.form-group label {
+  display: block; font-size: 11px;
+  color: var(--gray-600); margin-bottom: 3px; font-weight: 500;
+}
+.form-group input, .form-group select {
+  width: 100%; padding: 5px 8px;
+  border: 1px solid var(--gray-300); border-radius: 4px;
+  font-size: 13px; background: white;
+  transition: border-color .15s; font-family: inherit;
+}
+.form-group input:focus, .form-group select:focus {
+  outline: none; border-color: var(--green-mid);
+  box-shadow: 0 0 0 2px rgba(56,161,105,.15);
+}
+
+/* ── Info chips ── */
+.info-row { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 6px; min-height: 22px; }
+.info-chip {
+  background: var(--gray-100); border: 1px solid var(--gray-200);
+  border-radius: 4px; padding: 2px 7px; font-size: 11px; white-space: nowrap;
+}
+.info-chip strong { color: var(--green-dark); }
+.chip-adj { border-color: #ed8936 !important; color: var(--orange-mid); background: var(--orange-bg) !important; }
+.chip-low { border-color: #e53e3e !important; color: var(--red-mid); background: var(--red-light) !important; }
+
+/* ── Ward tab toggle ── */
+.ward-toggle {
+  display: flex; border-radius: 6px; overflow: hidden;
+  border: 1.5px solid var(--green-mid); margin-bottom: 8px;
+}
+.ward-btn {
+  flex: 1; padding: 7px 4px; border: none;
+  background: white; color: var(--green-dark);
+  font-size: 12px; font-weight: 700; cursor: pointer;
+  transition: all .15s; font-family: inherit;
+}
+.ward-btn.active { background: var(--green-mid); color: white; }
+.ward-btn:hover:not(.active) { background: var(--green-bg); }
+
+/* ── Checkbox grid ── */
+.checkbox-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+.cb-item {
+  display: flex; align-items: center; gap: 6px;
+  padding: 5px 8px; border: 1.5px solid var(--gray-200);
+  border-radius: 5px; cursor: pointer; font-size: 12px;
+  transition: all .15s; user-select: none;
+}
+.cb-item:hover { border-color: var(--green-mid); background: var(--green-bg); }
+.cb-item.checked { border-color: var(--green-dark); background: var(--green-light); font-weight: 600; color: var(--green-dark); }
+.cb-item input[type="checkbox"] {
+  width: 14px; height: 14px; cursor: pointer;
+  accent-color: var(--green-dark); flex-shrink: 0;
+}
+
+/* ── Tabs ── */
+.tabs {
+  display: flex; gap: 2px;
+  border-bottom: 2px solid var(--gray-200);
+  margin-bottom: 8px; flex-wrap: wrap;
+}
+.tab-btn {
+  padding: 6px 10px; border: none; background: none;
+  font-size: 12px; font-weight: 600; color: var(--gray-600);
+  cursor: pointer; border-radius: 6px 6px 0 0;
+  transition: all .15s; font-family: inherit;
+}
+.tab-btn:hover { color: var(--green-dark); background: var(--green-bg); }
+.tab-btn.active {
+  color: var(--green-dark); background: white;
+  border: 1px solid var(--gray-200); border-bottom: 2px solid white;
+  margin-bottom: -2px;
+}
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+/* ── Stat grid ── */
+.stat-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 6px; margin-bottom: 8px;
+}
+.stat-item {
+  background: white; border: 1px solid var(--gray-200);
+  border-radius: 7px; padding: 8px 10px; text-align: center;
+}
+.stat-label { font-size: 10px; color: var(--gray-600); margin-bottom: 1px; }
+.stat-value { font-size: 18px; font-weight: 700; color: var(--blue-dark); }
+.stat-unit { font-size: 10px; color: var(--gray-600); }
+
+/* ── Alert ── */
+.alert {
+  padding: 7px 11px; border-radius: 6px; margin-bottom: 7px;
+  font-size: 12px; display: flex; align-items: flex-start;
+  gap: 6px; line-height: 1.5;
+}
+.alert-info    { background: var(--blue-bg);     border-left: 3px solid var(--blue-mid); }
+.alert-warning { background: var(--yellow-light); border-left: 3px solid #d69e2e; }
+.alert-danger  { background: var(--red-light);   border-left: 3px solid var(--red-mid); }
+.alert-success { background: var(--green-light);  border-left: 3px solid var(--green-dark); }
+
+/* ── Table ── */
+.data-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 8px; }
+.data-table th {
+  background: var(--gray-100); padding: 5px 8px; text-align: left;
+  border-bottom: 2px solid var(--gray-200); font-weight: 600;
+  font-size: 11px; color: var(--gray-700);
+}
+.data-table td { padding: 5px 8px; border-bottom: 1px solid var(--gray-100); }
+.data-table tbody tr:hover td { background: var(--gray-50); }
+.data-table tfoot td { font-weight: 700; background: var(--green-bg); }
+.val-ok   { color: var(--green-dark); font-weight: 700; }
+.val-low  { color: var(--red-mid); font-weight: 700; }
+.val-high { color: var(--orange-mid); font-weight: 700; }
+
+/* ── Formula box ── */
+.formula-box {
+  background: linear-gradient(135deg, var(--green-bg), var(--blue-bg));
+  border: 2px solid var(--green-mid); border-radius: 9px;
+  padding: 14px 16px; margin-bottom: 10px;
+}
+.formula-name { font-size: 20px; font-weight: 700; color: var(--blue-dark); margin-bottom: 2px; }
+.formula-sub  { font-size: 11px; color: var(--gray-600); margin-bottom: 8px; }
+.formula-reason {
+  font-size: 12px; background: white; border-radius: 6px;
+  padding: 9px 12px; border-left: 3px solid var(--green-mid);
+  color: var(--gray-800); line-height: 1.65;
+}
+
+/* ── Step-up timeline ── */
+.timeline {
+  display: grid; grid-template-columns: repeat(7, 1fr);
+  gap: 4px; margin-bottom: 10px;
+}
+.day-card {
+  background: var(--gray-50); border: 1px solid var(--gray-200);
+  border-radius: 6px; padding: 7px 3px; text-align: center;
+}
+.day-card.is-target { background: var(--green-bg); border-color: var(--green-mid); }
+.day-label { font-size: 10px; color: var(--gray-600); margin-bottom: 1px; }
+.day-pct   { font-size: 13px; font-weight: 700; color: var(--green-dark); }
+.day-val   { font-size: 9px; color: var(--gray-600); margin-top: 1px; }
+.day-note  { font-size: 8px; color: var(--green-mid); margin-top: 2px; }
+
+/* ── Tolerance cards ── */
+.tol-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.tol-card { border: 1.5px solid var(--gray-200); border-radius: 7px; overflow: hidden; font-size: 12px; }
+.tol-head {
+  padding: 6px 10px; font-weight: 700; font-size: 11px;
+  background: var(--red-light); color: var(--red-mid);
+  border-bottom: 1px solid #fed7d7;
+}
+.tol-body { padding: 8px 10px; line-height: 1.7; color: var(--gray-800); }
+.tol-body ul { padding-left: 14px; }
+
+/* ── Water balance ── */
+.water-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 6px 0; border-bottom: 1px solid var(--gray-100); font-size: 12px;
+}
+.water-row:last-child { border-bottom: none; }
+.wr-label { color: var(--gray-600); }
+.wr-val   { font-weight: 700; color: var(--blue-dark); }
+.wr-need  { font-weight: 700; color: var(--green-dark); font-size: 15px; }
+.wr-warn  { font-weight: 700; color: var(--red-mid); }
+.progress-wrap { background: var(--gray-200); border-radius: 4px; height: 8px; overflow: hidden; margin: 6px 0; }
+.progress-bar  { height: 100%; border-radius: 4px; transition: width .3s; }
+.pb-ok     { background: var(--green-mid); }
+.pb-warn   { background: #ed8936; }
+.pb-danger { background: var(--red-mid); }
+
+/* ── Monitor items ── */
+.mon-item { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 8px; }
+.mon-icon { font-size: 15px; flex-shrink: 0; margin-top: 1px; }
+.mon-text { font-size: 12px; line-height: 1.55; }
+
+/* ── Order sheet ── */
+.order-summary {
+  background: var(--gray-50); border: 1px solid var(--gray-200);
+  border-radius: 7px; padding: 12px 14px; margin-bottom: 8px;
+}
+.order-title { font-weight: 700; font-size: 13px; margin-bottom: 8px; color: var(--blue-dark); }
+
+/* ── Section title ── */
+.section-title {
+  font-size: 12px; font-weight: 700; color: var(--blue-dark);
+  margin: 10px 0 6px; padding-bottom: 4px;
+  border-bottom: 2px solid var(--blue-light);
+  display: flex; align-items: center; gap: 5px;
+}
+
+/* ── GL notes ── */
+.gl-note { font-size: 11px; color: var(--gray-700); line-height: 1.75; }
+.gl-note b { color: var(--blue-dark); }
+
+/* ── Refeed box ── */
+.refeed-box {
+  background: var(--yellow-light); border: 1.5px solid #d69e2e;
+  border-radius: 7px; padding: 10px 12px; margin-bottom: 8px;
+  font-size: 12px; line-height: 1.7;
+}
+
+/* ── Plan A/B cards ── */
+.plan-row {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px;
+}
+.plan-card {
+  border: 2px solid var(--gray-300); border-radius: 9px; padding: 12px 14px;
+  cursor: pointer; transition: all .15s; position: relative; background: white;
+}
+.plan-card:hover { border-color: var(--green-mid); background: var(--green-bg); }
+.plan-card.plan-active {
+  border-color: var(--green-dark); background: var(--green-bg);
+  box-shadow: 0 0 0 2px rgba(39,103,73,.18);
+}
+.plan-card.plan-b-active {
+  border-color: var(--blue-mid); background: var(--blue-bg);
+  box-shadow: 0 0 0 2px rgba(43,108,176,.18);
+}
+.plan-badge {
+  display: inline-block; padding: 2px 8px; border-radius: 10px;
+  font-size: 10px; font-weight: 700; margin-bottom: 5px;
+}
+.badge-a { background: var(--green-dark); color: white; }
+.badge-b { background: var(--blue-mid); color: white; }
+.badge-manual { background: var(--orange-mid); color: white; }
+.plan-fname { font-size: 15px; font-weight: 700; color: var(--gray-800); margin-bottom: 2px; }
+.plan-indication { font-size: 11px; color: var(--gray-600); margin-bottom: 6px; }
+.plan-stats { display: flex; gap: 8px; flex-wrap: wrap; }
+.plan-stat { font-size: 11px; }
+.plan-stat b { color: var(--blue-dark); }
+.plan-select-btn {
+  width: 100%; margin-top: 8px; padding: 5px 0;
+  border: 1.5px solid var(--green-mid); border-radius: 5px;
+  background: white; color: var(--green-dark); font-size: 12px; font-weight: 700;
+  cursor: pointer; font-family: inherit; transition: all .15s;
+}
+.plan-select-btn:hover { background: var(--green-mid); color: white; }
+.plan-selected-label {
+  text-align: center; font-size: 11px; font-weight: 700;
+  color: var(--green-dark); margin-top: 6px;
+}
+
+/* ── All-formula grid ── */
+.formula-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; margin-top: 8px;
+}
+.fcard {
+  border: 1.5px solid var(--gray-200); border-radius: 7px; padding: 9px 10px;
+  cursor: pointer; transition: all .15s; background: white;
+}
+.fcard:hover { border-color: var(--green-mid); background: var(--green-bg); }
+.fcard.fcard-active { border-color: var(--green-dark); background: var(--green-bg); box-shadow: 0 0 0 2px rgba(39,103,73,.15); }
+.fcard-name { font-size: 12px; font-weight: 700; color: var(--gray-800); margin-bottom: 2px; }
+.fcard-ind  { font-size: 10px; color: var(--gray-600); margin-bottom: 5px; line-height: 1.4; }
+.fcard-nums { display: flex; gap: 5px; flex-wrap: wrap; }
+.fcard-num  { font-size: 10px; color: var(--gray-700); }
+.fcard-num b { color: var(--blue-dark); }
+.fcard-pct  {
+  display: inline-block; font-size: 10px; font-weight: 700; padding: 1px 5px;
+  border-radius: 3px; margin-top: 4px;
+}
+.fcard-pct-ok   { background: var(--green-light); color: var(--green-dark); }
+.fcard-pct-low  { background: var(--red-light);   color: var(--red-mid); }
+.fcard-pct-high { background: var(--yellow-light); color: var(--orange-mid); }
+
+/* ── Print ── */
+@media print {
+  body { background: white; font-size: 11px; }
+  .app-header { background: #1a4731 !important; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  .main-layout { display: block; height: auto; overflow: visible; }
+  .input-panel { display: none; }
+  .results-panel { padding: 0; overflow: visible; }
+  .tabs.no-print { display: none; }
+  .tab-content { display: block !important; margin-bottom: 12px; page-break-inside: avoid; }
+  .card { break-inside: avoid; margin-bottom: 6px; }
+  .btn { display: none !important; }
+  .no-print { display: none !important; }
+  .timeline { grid-template-columns: repeat(7, 1fr); }
+  .tol-grid { grid-template-columns: repeat(3, 1fr); }
+}
+
+@media (max-width: 768px) {
+  .main-layout { grid-template-columns: 1fr; height: auto; overflow: visible; }
+  .input-panel { border-right: none; border-bottom: 1px solid var(--gray-200); }
+  .stat-grid { grid-template-columns: repeat(2, 1fr); }
+  .timeline { grid-template-columns: repeat(4, 1fr); }
+  .tol-grid { grid-template-columns: 1fr; }
+}
+</style>
+
+  <!-- ═══ PWA / iPhone ホーム画面対応 ══════════════════════════════ -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="経管栄養">
+  <meta name="theme-color" content="#276749">
+  <script>
+  // インラインマニフェスト（manifest.jsonファイル不要）
+  (function(){
+    var manifest = {
+      name: "経管栄養プラン作成ツール v2",
+      short_name: "経管栄養",
+      start_url: ".",
+      display: "standalone",
+      orientation: "portrait-primary",
+      background_color: "#f0fff4",
+      theme_color: "#276749",
+      lang: "ja",
+      icons: []
+    };
+    var blob = new Blob([JSON.stringify(manifest)], {type:'application/manifest+json'});
+    var url  = URL.createObjectURL(blob);
+    var link = document.createElement('link');
+    link.rel = 'manifest'; link.href = url;
+    document.head.appendChild(link);
+  })();
+  </script>
+  <script>
+  // Service Worker（オフラインキャッシュ）をBlob URLで登録
+  if ('serviceWorker' in navigator) {
+    var swCode = `
+      var CACHE = 'pwa-v1';
+      self.addEventListener('install', function(e) {
+        self.skipWaiting();
+      });
+      self.addEventListener('fetch', function(e) {
+        e.respondWith(
+          caches.open(CACHE).then(function(cache) {
+            return cache.match(e.request).then(function(cached) {
+              var fresh = fetch(e.request).then(function(r) {
+                cache.put(e.request, r.clone()); return r;
+              }).catch(function() { return cached; });
+              return cached || fresh;
+            });
+          })
+        );
+      });
+    `;
+    var swBlob = new Blob([swCode], {type:'application/javascript'});
+    var swURL  = URL.createObjectURL(swBlob);
+    navigator.serviceWorker.register(swURL).catch(function(){});
+  }
+  </script>
+  <script>
+  // iPhone用ホーム画面アイコンをCanvasで生成
+  (function(){
+    var sizes = [180, 152, 120, 76];
+    sizes.forEach(function(sz){
+      var canvas = document.createElement('canvas');
+      canvas.width = canvas.height = sz;
+      var ctx = canvas.getContext('2d');
+      // 背景
+      var grad = ctx.createLinearGradient(0,0,sz,sz);
+      grad.addColorStop(0, '#1a4731');
+      grad.addColorStop(1, '#38a169');
+      ctx.fillStyle = grad;
+      var r = sz * 0.22;
+      ctx.beginPath();
+      ctx.moveTo(r,0); ctx.lineTo(sz-r,0);
+      ctx.quadraticCurveTo(sz,0,sz,r);
+      ctx.lineTo(sz,sz-r); ctx.quadraticCurveTo(sz,sz,sz-r,sz);
+      ctx.lineTo(r,sz); ctx.quadraticCurveTo(0,sz,0,sz-r);
+      ctx.lineTo(0,r); ctx.quadraticCurveTo(0,0,r,0);
+      ctx.closePath(); ctx.fill();
+      // 絵文字
+      ctx.font = (sz*0.52)+'px serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('🍶', sz/2, sz/2+sz*0.03);
+      var link = document.createElement('link');
+      link.rel = 'apple-touch-icon';
+      link.sizes = sz+'x'+sz;
+      link.href  = canvas.toDataURL('image/png');
+      document.head.appendChild(link);
+    });
+  })();
+  </script>
+  <!-- ═══ PWA ここまで ══════════════════════════════════════════════ -->
+
+  <style>
+  /* iPhoneでinput/selectタップ時のズーム防止 */
+  @media (max-width: 768px) {
+    input, select, textarea {
+      font-size: 16px !important;
+    }
+    .form-group input, .form-group select {
+      font-size: 16px !important;
+    }
+  }
+  /* iPhoneのsafe-area（ノッチ等）対応 */
+  body {
+    padding-top: env(safe-area-inset-top);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  </style>
+</head>
+<body>
+
+<!-- ════ Header ════ -->
+<div class="app-header">
+  <div>
+    <h1>🍶 経管栄養プラン作成ツール v2</h1>
+    <div class="subtitle">JCCNG2024 / JSPEN 静脈経腸栄養GL第3版 準拠 ｜ 成人・医師専用 ｜ 院内濃厚流動食栄養成分表（令和5年7月改訂）</div>
+  </div>
+  <div class="header-right no-print">
+    <button class="btn btn-ghost" onclick="resetForm()">🔄 リセット</button>
+    <button class="btn btn-ghost" onclick="window.print()">🖨 印刷</button>
+  </div>
+</div>
+
+<!-- ════ Main Layout ════ -->
+<div class="main-layout">
+
+  <!-- ── 左パネル：入力 ───────────────────────── -->
+  <div class="input-panel">
+
+    <!-- 患者情報 -->
+    <div class="card">
+      <div class="card-header">👤 患者基本情報</div>
+      <div class="card-body">
+        <div class="form-row">
+          <div class="form-group">
+            <label>身長 (cm)</label>
+            <input type="number" id="height" placeholder="165" min="100" max="220" oninput="calculate()">
+          </div>
+          <div class="form-group">
+            <label>体重 (kg)</label>
+            <input type="number" id="weight" placeholder="60" min="20" max="250" step="0.1" oninput="calculate()">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>年齢</label>
+            <input type="number" id="age" placeholder="70" min="18" max="120" oninput="calculate()">
+          </div>
+          <div class="form-group">
+            <label>性別</label>
+            <select id="sex" onchange="calculate()">
+              <option value="">選択</option>
+              <option value="male">男性</option>
+              <option value="female">女性</option>
+            </select>
+          </div>
+        </div>
+        <div class="info-row" id="bw-info"></div>
+      </div>
+    </div>
+
+    <!-- 病棟・病態 -->
+    <div class="card">
+      <div class="card-header">🏥 病棟・臨床設定</div>
+      <div class="card-body">
+        <div class="ward-toggle">
+          <button class="ward-btn active" id="btn-icu" onclick="switchWard('icu')">🔴 ICU / CCU</button>
+          <button class="ward-btn" id="btn-gen" onclick="switchWard('gen')">🏥 一般病棟</button>
+        </div>
+
+        <!-- ICU パネル -->
+        <div id="panel-icu">
+          <div class="form-row">
+            <div class="form-group">
+              <label>入室からの日数</label>
+              <select id="icu-day" onchange="calculate()">
+                <option value="early">1〜2日目（急性期早期）</option>
+                <option value="mid">3〜7日目</option>
+                <option value="late">8日目以降</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>循環動態</label>
+              <select id="hemodynamics" onchange="calculate()">
+                <option value="stable">安定</option>
+                <option value="unstable">不安定（昇圧剤使用中）</option>
+                <option value="shock">ショック状態</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>人工呼吸器</label>
+              <select id="ventilation" onchange="calculate()">
+                <option value="no">なし</option>
+                <option value="yes">あり</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>腎代替療法 (RRT)</label>
+              <select id="rrt" onchange="calculate()">
+                <option value="none">なし</option>
+                <option value="crrt">CRRT（持続血液濾過透析）</option>
+                <option value="ihd">IHD（間歇的血液透析）</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- 一般病棟パネル -->
+        <div id="panel-gen" class="hidden">
+          <div class="form-row">
+            <div class="form-group">
+              <label>侵襲度</label>
+              <select id="stress" onchange="calculate()">
+                <option value="none">なし（安定期）</option>
+                <option value="mild">軽度（軽症感染・術後早期）</option>
+                <option value="moderate">中等度（大手術後・中等症）</option>
+                <option value="severe">高度（重症感染・外傷等）</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>活動レベル</label>
+              <select id="activity" onchange="calculate()">
+                <option value="bed">安静臥床</option>
+                <option value="low">軽度活動可（病棟内歩行程度）</option>
+                <option value="moderate">中等度活動（リハビリ実施中）</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- NRS-2002 -->
+    <div class="card">
+      <div class="card-header">📋 NRS-2002 スコア</div>
+      <div class="card-body">
+        <div class="form-row">
+          <div class="form-group">
+            <label>NRS-2002 合計スコア（0〜7点）</label>
+            <input type="number" id="nrs" placeholder="未評価は空欄" min="0" max="7" oninput="calculate()">
+          </div>
+        </div>
+        <div id="nrs-info" style="font-size:11px;color:var(--gray-600);margin-top:2px;">
+          ≥3点：栄養サポートが必要。ICU患者は全例3点以上とみなす。
+        </div>
+      </div>
+    </div>
+
+    <!-- 合併疾患 -->
+    <div class="card">
+      <div class="card-header">🩺 合併疾患・病態</div>
+      <div class="card-body">
+        <div class="checkbox-grid" id="comorbidity-grid">
+          <!-- JSで描画 -->
+        </div>
+      </div>
+    </div>
+
+    <!-- 投与経路・方法 -->
+    <div class="card">
+      <div class="card-header">💉 投与経路・方法</div>
+      <div class="card-body">
+        <div class="form-row">
+          <div class="form-group">
+            <label>経腸栄養ルート</label>
+            <select id="route" onchange="updateRouteMethod(); calculate()">
+              <option value="ng">経鼻胃管（NGT）</option>
+              <option value="nj">経鼻空腸チューブ（NJT）</option>
+              <option value="peg">胃瘻（PEG）</option>
+              <option value="jej">空腸瘻</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>投与方法</label>
+            <select id="method" onchange="updateMethodUI(); calculate()">
+              <option value="continuous">持続投与（ポンプ）</option>
+              <option value="intermittent">間欠投与</option>
+              <option value="semisolid">半固形（PEG専用）</option>
+            </select>
+          </div>
+        </div>
+        <div id="method-detail" class="form-row">
+          <div class="form-group">
+            <label>1日投与時間（持続）</label>
+            <select id="hours" onchange="calculate()">
+              <option value="24">24時間</option>
+              <option value="20">20時間（4h休止）</option>
+              <option value="16">16時間（8h休止）</option>
+              <option value="12">12時間（12h休止）</option>
+            </select>
+          </div>
+        </div>
+        <div id="method-detail-int" class="form-row" style="display:none">
+          <div class="form-group">
+            <label>1日投与回数（間欠）</label>
+            <select id="times" onchange="calculate()">
+              <option value="4">4回/日</option>
+              <option value="5">5回/日</option>
+              <option value="6">6回/日</option>
+              <option value="3">3回/日</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>目標量の調整（%）</label>
+            <input type="number" id="pct" value="100" min="25" max="120" oninput="calculate()">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 水分設定 -->
+    <div class="card">
+      <div class="card-header">💧 水分設定</div>
+      <div class="card-body">
+        <div class="form-row">
+          <div class="form-group">
+            <label>水分制限量 (ml/日) ※空欄=制限なし</label>
+            <input type="number" id="fluid-limit" placeholder="例: 1500" min="500" max="5000" oninput="calculate()">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>チューブ洗浄水 (ml/日)</label>
+            <input type="number" id="flush" value="200" min="0" max="1000" oninput="calculate()">
+          </div>
+          <div class="form-group">
+            <label>その他水分（輸液・内服等）</label>
+            <input type="number" id="other-fluid" value="0" min="0" max="5000" oninput="calculate()">
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /input-panel -->
+
+  <!-- ── 右パネル：結果 ───────────────────────── -->
+  <div class="results-panel">
+
+    <div id="no-input-msg" class="alert alert-info" style="margin-bottom:10px;">
+      ℹ️ 左パネルに患者情報（身長・体重・年齢・性別）を入力すると自動的に計算されます。
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs no-print" id="result-tabs" style="display:none;">
+      <button class="tab-btn active" onclick="showTab('tab-targets',this)">📊 栄養目標</button>
+      <button class="tab-btn" onclick="showTab('tab-formula',this)">🍶 製剤・投与</button>
+      <button class="tab-btn" onclick="showTab('tab-stepup',this)">📈 ステップアップ</button>
+      <button class="tab-btn" onclick="showTab('tab-fluid',this)">💧 水分バランス</button>
+      <button class="tab-btn" onclick="showTab('tab-order',this)">📄 投与指示</button>
+    </div>
+
+    <!-- TAB: 栄養目標 -->
+    <div id="tab-targets" class="tab-content active">
+      <div class="stat-grid" id="stat-grid">
+        <div class="stat-item">
+          <div class="stat-label">目標カロリー</div>
+          <div class="stat-value" id="stat-kcal">—</div>
+          <div class="stat-unit">kcal/日</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">目標タンパク質</div>
+          <div class="stat-value" id="stat-prot">—</div>
+          <div class="stat-unit">g/日</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">計算用体重</div>
+          <div class="stat-value" id="stat-bw">—</div>
+          <div class="stat-unit" id="stat-bw-unit">kg</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header">📊 栄養目標詳細</div>
+        <div class="card-body" id="target-details">
+          <p style="color:var(--gray-600);text-align:center;padding:20px;">患者情報を入力してください</p>
+        </div>
+      </div>
+      <div class="card" id="gl-card" style="display:none;">
+        <div class="card-header">📚 ガイドライン根拠</div>
+        <div class="card-body" id="gl-content"></div>
+      </div>
+    </div>
+
+    <!-- TAB: 製剤・投与 -->
+    <div id="tab-formula" class="tab-content">
+      <div id="formula-content">
+        <p style="color:var(--gray-600);text-align:center;padding:20px;">患者情報を入力してください</p>
+      </div>
+    </div>
+
+    <!-- TAB: ステップアップ -->
+    <div id="tab-stepup" class="tab-content">
+      <div id="stepup-content">
+        <p style="color:var(--gray-600);text-align:center;padding:20px;">患者情報を入力してください</p>
+      </div>
+    </div>
+
+    <!-- TAB: 水分バランス -->
+    <div id="tab-fluid" class="tab-content">
+      <div class="card">
+        <div class="card-header">💧 1日水分バランス</div>
+        <div class="card-body" id="fluid-content">
+          <p style="color:var(--gray-600);text-align:center;padding:20px;">患者情報を入力してください</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: 投与指示 -->
+    <div id="tab-order" class="tab-content">
+      <div class="card">
+        <div class="card-header">📄 投与指示サマリー
+          <span style="font-size:10px;font-weight:400;margin-left:8px;color:var(--gray-600);">印刷用</span>
+        </div>
+        <div class="card-body" id="order-content">
+          <p style="color:var(--gray-600);text-align:center;padding:20px;">患者情報を入力してください</p>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /results-panel -->
+</div><!-- /main-layout -->
+
+<script>
+'use strict';
+
+// ══════════════════════════════════════════════════
+// 製剤データベース（院内濃厚流動食栄養成分表 令和5年7月1日改訂）
+// 液体製剤: 値は 100ml 中, パック製剤: 値は 1パック中
+// ══════════════════════════════════════════════════
+const FORMULAS = {
+  'メイバランス1.0': {
+    kcalPer100: 100, protein: 4.0, fat: 25, carb: 59, salt: 0.28,
+    fiber: 1.0, K: 100, osmol: 380, water: 84.3, isPack: false, price: 48,
+    indication: '一般（標準）',
+    note: 'バランスの取れた標準製剤。特別な制限・疾患がない場合の第一選択。'
+  },
+  'ラクフィア': {
+    kcalPer100: 100, protein: 4.0, fat: 27, carb: 57, salt: 0.50,
+    fiber: 1.0, K: 120, osmol: 350, water: 85, isPack: false, price: 45,
+    indication: '下痢（乳酸菌配合）',
+    note: '乳酸菌（プロバイオティクス）配合。下痢症例の腸内環境改善に使用。'
+  },
+  'メイバランス1.5': {
+    kcalPer100: 150, protein: 7.5, fat: 23, carb: 58, salt: 0.42,
+    fiber: 1.8, K: 150, osmol: 620, water: 76.1, isPack: false, price: 44,
+    indication: '高エネルギー・高タンパク質',
+    note: '高カロリー高蛋白。透析中・術後回復期・栄養不良患者に適する。'
+  },
+  'アイソカルS(1.5)': {
+    kcalPer100: 150, protein: 5.7, fat: 41, carb: 44, salt: 0.35,
+    fiber: 2.2, K: 120, osmol: 410, water: 76.5, isPack: false, price: 38,
+    indication: '糖尿病・下痢（PHGG配合）',
+    note: '高脂質・低糖質組成で血糖コントロールに有利。PHGG配合で下痢抑制効果あり。'
+  },
+  'メイバランス2.0': {
+    kcalPer100: 200, protein: 6.8, fat: 30, carb: 57, salt: 0.40,
+    fiber: 2.0, K: 160, osmol: 600, water: 69.1, isPack: false, price: 37,
+    indication: '高エネルギー・水分制限',
+    note: '2.0kcal/mlの高エネルギー密度。水分制限が必要な心不全・SIADHに適する。'
+  },
+  'インスロー': {
+    kcalPer100: 100, protein: 5.0, fat: 30, carb: 49, salt: 0.28,
+    fiber: 1.5, K: 100, osmol: 540, water: 84.4, isPack: false, price: 100,
+    indication: '糖尿病',
+    note: '糖尿病用製剤。低糖質・高脂質組成で食後高血糖を抑制。食物繊維強化。'
+  },
+  'リーナレン1.0(LP)': {
+    kcalPer100: 160, protein: 1.6, fat: 25, carb: 70, salt: 0.12,
+    fiber: 1.6, K: 48, osmol: 720, water: 75.8, isPack: false, price: 73,
+    indication: '腎臓病（低タンパク・透析前）',
+    note: '超低タンパク・低カリウム・低塩分設計。透析導入前CKDで蛋白を厳しく制限する場合に選択。高エネルギー密度（1.6kcal/ml）。'
+  },
+  'リーナレン3.5(MP)': {
+    kcalPer100: 160, protein: 5.6, fat: 25, carb: 60, salt: 0.24,
+    fiber: 1.6, K: 48, osmol: 730, water: 74.9, isPack: false, price: 73,
+    indication: '腎臓病（中タンパク・透析前）',
+    note: '中タンパク・低カリウム・低塩分設計。CKDで中等度タンパク制限が必要な場合。高エネルギー密度（1.6kcal/ml）。'
+  },
+  'ペプチーノ': {
+    kcalPer100: 100, protein: 3.6, fat: 0, carb: 86, salt: 0.20,
+    fiber: 0, K: 77, osmol: 485, water: 85, isPack: false, price: 105,
+    indication: '無脂肪・消化態流動食',
+    note: '無脂肪の消化態流動食。膵炎・膵外分泌不全・脂肪吸収不良に使用。脂肪を含まない唯一の製剤。'
+  },
+  'ペプタメンS': {
+    kcalPer100: 150, protein: 5.3, fat: 36, carb: 50, salt: 0.55,
+    fiber: 0, K: 160, osmol: 520, water: 76.5, isPack: false, price: 106,
+    indication: '消化態流動食・下痢',
+    note: 'ペプチド型消化態流動食。重篤な消化管機能不全・短腸症候群・膵炎回復期に使用。'
+  },
+  'プルモケア': {
+    kcalPer100: 150, protein: 6.2, fat: 55, carb: 28, salt: 0.33,
+    fiber: 0, K: 174, osmol: 385, water: 78.7, isPack: false, price: 67,
+    indication: 'COPD・慢性呼吸不全',
+    note: '高脂質（55%）・低糖質（28%）でCO₂産生を抑制。呼吸商低下により換気負荷を軽減。COPD・呼吸不全専用。'
+  },
+  'メディエフ1P(120g)': {
+    isPack: true, packKcal: 300, protein: 14.1, fat: 25, carb: 56, salt: 1.50,
+    fiber: 3.6, K: 504, osmol: null, water: 52, price: 90,
+    indication: '半固形流動食（胃瘻PEG用）',
+    note: '半固形タイプ。胃瘻（PEG）から投与。逆流・誤嚥リスク低減。1パック300kcal・タンパク質14.1g。'
+  },
+  'F2ライト1P(400g)': {
+    isPack: true, packKcal: 300, protein: 12.0, fat: 20, carb: 64, salt: 1.04,
+    fiber: 4.9, K: 387, osmol: null, water: 330, price: 75,
+    indication: 'とろみ栄養食（胃瘻用）',
+    note: 'とろみ液状栄養食。胃瘻から投与。1パック300kcal・タンパク質12.0g。食物繊維豊富（4.9g/P）。'
+  }
+};
+
+// ══════════════════════════════════════════════════
+// 状態管理
+// ══════════════════════════════════════════════════
+let currentWard = 'icu';
+let R = null;            // 計算結果
+let selectedFormula = null; // null=自動, string=手動選択製剤名
+
+// ══════════════════════════════════════════════════
+// 合併疾患チェックボックス描画
+// ══════════════════════════════════════════════════
+const COMORBIDITIES_ICU = [
+  { id: 'c-dm',       label: '糖尿病 / 耐糖能異常' },
+  { id: 'c-ckd',      label: '慢性腎臓病（透析なし）' },
+  { id: 'c-copd',     label: 'COPD / 慢性呼吸不全' },
+  { id: 'c-hf',       label: '心不全（水分制限）' },
+  { id: 'c-gi',       label: '消化管機能不全 / 吸収不良' },
+  { id: 'c-diarrhea', label: '下痢' },
+  { id: 'c-malnut',   label: '高度栄養障害（NRS≥3）' },
+  { id: 'c-refeed',   label: '長期絶食（リフィーディングリスク）' },
+];
+const COMORBIDITIES_GEN = [
+  { id: 'c-dm',       label: '糖尿病 / 耐糖能異常' },
+  { id: 'c-ckd',      label: '慢性腎臓病（透析なし）' },
+  { id: 'c-copd',     label: 'COPD / 慢性呼吸不全' },
+  { id: 'c-hf',       label: '心不全（水分制限）' },
+  { id: 'c-gi',       label: '消化管機能不全 / 吸収不良' },
+  { id: 'c-diarrhea', label: '下痢' },
+  { id: 'c-dialysis', label: '透析中（血液・腹膜）' },
+  { id: 'c-refeed',   label: '長期絶食（リフィーディングリスク）' },
+];
+
+function renderComorbidityGrid(ward) {
+  const list = ward === 'icu' ? COMORBIDITIES_ICU : COMORBIDITIES_GEN;
+  const prev = {};
+  list.forEach(c => {
+    const el = document.getElementById(c.id);
+    if (el) prev[c.id] = el.checked;
+  });
+  const grid = document.getElementById('comorbidity-grid');
+  grid.innerHTML = list.map(c => `
+    <label class="cb-item${prev[c.id] ? ' checked' : ''}" id="lbl-${c.id}">
+      <input type="checkbox" id="${c.id}" ${prev[c.id] ? 'checked' : ''}
+        onchange="this.closest('label').classList.toggle('checked',this.checked); calculate()">
+      <span>${c.label}</span>
+    </label>
+  `).join('');
+}
+
+// ══════════════════════════════════════════════════
+// 初期化（DOMContentLoaded 後に実行）
+// ══════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', function() {
+  renderComorbidityGrid('icu');
+  updateMethodUI();
+});
+
+// ══════════════════════════════════════════════════
+// 病棟切替
+// ══════════════════════════════════════════════════
+function switchWard(ward) {
+  currentWard = ward;
+  document.getElementById('btn-icu').classList.toggle('active', ward === 'icu');
+  document.getElementById('btn-gen').classList.toggle('active', ward === 'gen');
+  document.getElementById('panel-icu').classList.toggle('hidden', ward !== 'icu');
+  document.getElementById('panel-gen').classList.toggle('hidden', ward === 'icu');
+  renderComorbidityGrid(ward);
+  calculate();
+}
+
+// ══════════════════════════════════════════════════
+// 投与方法UI切替
+// ══════════════════════════════════════════════════
+function updateMethodUI() {
+  const method = document.getElementById('method').value;
+  document.getElementById('method-detail').style.display     = method === 'continuous' ? '' : 'none';
+  document.getElementById('method-detail-int').style.display = method === 'intermittent' ? '' : 'none';
+}
+
+function updateRouteMethod() {
+  // PEG以外で半固形が選択されていたら持続に戻す
+  const route  = document.getElementById('route').value;
+  const method = document.getElementById('method');
+  if (route !== 'peg' && method.value === 'semisolid') method.value = 'continuous';
+  const semiOpt = method.querySelector('option[value="semisolid"]');
+  if (semiOpt) semiOpt.disabled = (route !== 'peg');
+  updateMethodUI();
+}
+
+// ══════════════════════════════════════════════════
+// タブ切替
+// ══════════════════════════════════════════════════
+function showTab(id, btn) {
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  if (btn) btn.classList.add('active');
+}
+
+// ══════════════════════════════════════════════════
+// 製剤選択ロジック
+// ══════════════════════════════════════════════════
+function selectFormula(cond, ward, bmi, method) {
+  const { dm, ckd, copd, hf, gi, diarrhea, dialysis, rrt, malnut, refeed } = cond;
+
+  // 半固形は最優先
+  if (method === 'semisolid') {
+    return { name: 'メディエフ1P(120g)',
+      gl: '半固形流動食（胃瘻PEG用）：半固形投与により逆流・胃食道逆流を抑制。JSPEN GL: 胃瘻患者には半固形栄養剤を推奨。' };
+  }
+
+  // 消化管機能不全
+  if (gi) {
+    if (diarrhea) return { name: 'ペプタメンS',
+      gl: '消化管機能不全＋下痢：消化態（ペプチド型）製剤を選択。JCCNG2024 CQ2-3: 重症患者への消化態製剤は弱く非推奨（GRADE 2D）だが吸収不良症候群は例外。' };
+    return { name: 'ペプチーノ',
+      gl: '消化管機能不全（脂肪吸収障害）：無脂肪消化態流動食を選択。JSPEN GL Part IV 膵炎: 消化態製剤の使用を推奨。' };
+  }
+
+  // CKD（非透析）
+  if (ckd && !dialysis && rrt === 'none') {
+    if (ward === 'icu') return { name: 'リーナレン3.5(MP)',
+      gl: 'CKD（非透析）ICU：リーナレン3.5(MP)。ICU急性期は侵襲によるタンパク異化亢進を考慮し中タンパク設計を使用。低K・低塩分設計。' };
+    return { name: 'リーナレン1.0(LP)',
+      gl: 'CKD（非透析）一般病棟：リーナレン1.0(LP)。厳格なタンパク制限（0.6g/kg）が必要な場合に超低タンパク製剤を使用。JSPEN GL Part IV 腎不全。' };
+  }
+
+  // COPD
+  if (copd) return { name: 'プルモケア',
+    gl: 'COPD / 慢性呼吸不全：プルモケア。高脂質（55%）・低糖質（28%）でCO₂産生を抑制し呼吸商を低下。JSPEN GL Part IV 慢性呼吸不全: 高脂肪・低糖質製剤推奨（B-II）。' };
+
+  // 心不全
+  if (hf) {
+    if (dm) return { name: 'アイソカルS(1.5)',
+      gl: '心不全＋糖尿病：アイソカルS(1.5)。1.5kcal/mlで水分制限に対応しながら高脂質・低糖質で血糖管理。PHGG配合で下痢抑制。' };
+    return { name: 'メイバランス2.0',
+      gl: '心不全（水分制限）：2.0kcal/mlの高エネルギー密度製剤。少量投与で必要カロリーを確保。JSPEN GL Part IV 心不全: 高エネルギー密度製剤を推奨。' };
+  }
+
+  // 糖尿病＋下痢
+  if (dm && diarrhea) return { name: 'アイソカルS(1.5)',
+    gl: '糖尿病＋下痢：アイソカルS(1.5)。PHGG配合で下痢抑制と血糖コントロールを同時に実現。JSPEN GL Part IV 糖尿病: 低GI・高脂肪組成製剤推奨（B-II）。' };
+
+  // 糖尿病のみ
+  if (dm) return { name: 'インスロー',
+    gl: '糖尿病：インスロー。低糖質（49%）・高脂質（30%）・食物繊維強化の糖尿病専用製剤。JSPEN GL Part IV 糖尿病: 低GI製剤・食物繊維強化製剤を推奨。' };
+
+  // 下痢
+  if (diarrhea) return { name: 'ラクフィア',
+    gl: '下痢：ラクフィア。乳酸菌（プロバイオティクス）配合で腸内環境を改善。JCCNG2024 CQ2-7-2: 重症患者へのプロバイオティクスは条件付き推奨（GRADE 2C）。' };
+
+  // 透析 / CRRT
+  if (dialysis || (rrt && rrt !== 'none')) return { name: 'メイバランス1.5',
+    gl: '腎代替療法中（CRRT/透析）：高タンパク製剤（メイバランス1.5）。CRRTではアミノ酸喪失が著しく1.5〜2.5g/kg/dayの補充が必要。JCCNG2024。' };
+
+  // 低栄養 / ICU回復期
+  const bmiNum = parseFloat(bmi) || 22;
+  if (bmiNum < 18.5 || malnut) return { name: 'メイバランス1.5',
+    gl: '低栄養 / 低体重：高エネルギー・高タンパク製剤。栄養不良改善と筋量維持に高タンパク補給が重要。リフィーディングリスクある場合は開始量を抑え漸増。JCCNG2024。' };
+
+  // 標準
+  return { name: 'メイバランス1.0',
+    gl: '標準製剤：特別な制限・疾患がない場合の第一選択。バランスの取れた組成（100kcal/100ml）。JSPEN GL: 腸管機能が保たれている場合は経腸栄養を選択（A-II）。' };
+}
+
+// ══════════════════════════════════════════════════
+// 第二選択製剤ロジック（プランB）
+// ══════════════════════════════════════════════════
+function selectSecondaryFormula(planAName, cond, ward, method) {
+  const { dm, ckd, copd, hf, gi, diarrhea, dialysis, rrt } = cond;
+
+  // 半固形は2択
+  if (method === 'semisolid') {
+    return { name: planAName === 'メディエフ1P(120g)' ? 'F2ライト1P(400g)' : 'メディエフ1P(120g)',
+      reason: '胃瘻用半固形製剤の代替選択。食物繊維含有量・テクスチャーが異なるため耐性を確認しながら使い分け。' };
+  }
+
+  const alt = {
+    'メイバランス1.0': {
+      name: 'メイバランス1.5',
+      reason: '標準製剤の代替として高エネルギー・高タンパク製剤を選択。低栄養傾向や術後回復期に移行する際に使用。' },
+    'ラクフィア': {
+      name: 'メイバランス1.0',
+      reason: '下痢改善後の標準製剤への移行候補。または乳酸菌製剤が入手困難な場合の代替。' },
+    'メイバランス1.5': {
+      name: 'メイバランス1.0',
+      reason: 'より低エネルギーが必要になった場合（病態安定化・経口開始時）の移行先として標準製剤を選択。' },
+    'アイソカルS(1.5)': {
+      name: dm ? 'インスロー' : 'メイバランス2.0',
+      reason: dm
+        ? '糖尿病専用の代替製剤。水分制限が軽減した場合や下痢が改善した場合に変更を検討。'
+        : '水分制限が同様に必要な場合の代替。よりエネルギー密度が高く少量投与が可能。' },
+    'メイバランス2.0': {
+      name: 'メイバランス1.5',
+      reason: '水分制限が緩和した場合の移行先。依然として高エネルギー・高タンパクが必要な場合に適する。' },
+    'インスロー': {
+      name: 'アイソカルS(1.5)',
+      reason: '糖尿病＋下痢症例の代替。PHGGによる下痢抑制と血糖コントロールを同時に実現。水分制限にも対応（1.5kcal/ml）。' },
+    'リーナレン1.0(LP)': {
+      name: 'リーナレン3.5(MP)',
+      reason: 'タンパク制限を緩和する場合の移行先。中タンパク・低カリウム設計で段階的なCKD管理に対応。' },
+    'リーナレン3.5(MP)': {
+      name: 'リーナレン1.0(LP)',
+      reason: 'より厳格なタンパク制限が必要となった場合（保存期CKD進行・腎機能悪化）の変更先。' },
+    'ペプチーノ': {
+      name: 'ペプタメンS',
+      reason: '脂肪吸収の改善が見込まれる際の移行先。ペプチド型消化態製剤で高エネルギー（1.5kcal/ml）・高タンパクに対応。' },
+    'ペプタメンS': {
+      name: diarrhea ? 'ラクフィア' : 'メイバランス1.5',
+      reason: diarrhea
+        ? '消化管機能改善後の下痢持続症例に。プロバイオティクス配合で腸内環境を整えながら標準製剤へ移行準備。'
+        : '消化管機能回復後の高タンパク製剤への移行。病態安定化とともに経腸栄養の強化を目指す。' },
+    'プルモケア': {
+      name: 'メイバランス1.5',
+      reason: '呼吸状態が改善し特殊製剤の必要性が低下した場合の移行先。高エネルギー・高タンパクで栄養管理を継続。' },
+    'メディエフ1P(120g)': {
+      name: 'F2ライト1P(400g)',
+      reason: '半固形製剤の代替。より多くの食物繊維（4.9g/P）と豊富な水分含量（330ml/P）が特徴。便秘傾向に有用。' },
+    'F2ライト1P(400g)': {
+      name: 'メディエフ1P(120g)',
+      reason: '半固形製剤の代替。より高タンパク（14.1g/P）で逆流予防効果が高く、嘔吐・逆流症状がある場合に変更を検討。' },
+  };
+
+  return alt[planAName] || { name: 'メイバランス1.0', reason: '代替の標準製剤として選択。' };
+}
+
+// ══════════════════════════════════════════════════
+// 製剤ごとの投与量・栄養素を一括計算するヘルパー
+// ══════════════════════════════════════════════════
+function computeFormulaStats(fName, targetKcal, targetProt, method, hours, times, calcBW) {
+  const f = FORMULAS[fName];
+  if (!f) return null;
+
+  let volPerDay, packs, providedKcal, providedProt, providedSalt, providedK, providedWater;
+  if (f.isPack) {
+    packs        = Math.ceil(targetKcal / f.packKcal);
+    providedKcal  = packs * f.packKcal;
+    providedProt  = Math.round(packs * f.protein * 10) / 10;
+    providedSalt  = Math.round(packs * f.salt * 100) / 100;
+    providedK     = Math.round(packs * f.K);
+    providedWater = packs * f.water;
+    volPerDay     = null;
+  } else {
+    volPerDay     = Math.round((targetKcal / f.kcalPer100) * 100);
+    const v100    = volPerDay / 100;
+    providedKcal  = Math.round(f.kcalPer100 * v100);
+    providedProt  = Math.round(f.protein * v100 * 10) / 10;
+    providedSalt  = Math.round(f.salt * v100 * 100) / 100;
+    providedK     = Math.round(f.K * v100);
+    providedWater = Math.round(f.water * v100);
+  }
+
+  const dailyCost = f.isPack ? packs * f.price : Math.round((providedKcal / 100) * f.price);
+  const kcalPct   = Math.round(providedKcal / targetKcal * 100);
+  const protPct   = Math.round(providedProt  / targetProt  * 100);
+
+  let rateStr, volStr, rateLabelStr, volLabelStr;
+  if (f.isPack) {
+    volStr = `${packs}P`; volLabelStr = '1日パック数';
+    rateStr = `${packs}回/日`; rateLabelStr = '投与回数';
+  } else if (method === 'continuous') {
+    const rate = Math.round(volPerDay / hours);
+    volStr = `${volPerDay} ml`; volLabelStr = '製剤量 (ml/日)';
+    rateStr = `${rate} ml/hr`; rateLabelStr = '投与速度';
+  } else {
+    const vpf = Math.round(volPerDay / times);
+    volStr = `${volPerDay} ml`; volLabelStr = '製剤量 (ml/日)';
+    rateStr = `${vpf} ml × ${times}回`; rateLabelStr = '1回量 × 回数';
+  }
+
+  return {
+    f, volPerDay, packs, providedKcal, providedProt, providedSalt, providedK, providedWater,
+    dailyCost, kcalPct, protPct, rateStr, volStr, rateLabelStr, volLabelStr
+  };
+}
+
+// ══════════════════════════════════════════════════
+// 手動製剤選択・自動選択に戻す
+// ══════════════════════════════════════════════════
+function pickFormula(name) {
+  selectedFormula = name;
+  calculate();
+  // 製剤タブを前面に
+  document.querySelectorAll('.tab-btn').forEach((b, i) => {
+    const isFormula = b.textContent.includes('製剤');
+    b.classList.toggle('active', isFormula);
+  });
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  document.getElementById('tab-formula').classList.add('active');
+}
+
+function resetFormulaSelection() {
+  selectedFormula = null;
+  calculate();
+}
+
+// ══════════════════════════════════════════════════
+// メイン計算エンジン
+// ══════════════════════════════════════════════════
+function calculate() {
+  const height = parseFloat(document.getElementById('height').value);
+  const weight = parseFloat(document.getElementById('weight').value);
+  const age    = parseFloat(document.getElementById('age').value);
+  const sex    = document.getElementById('sex').value;
+
+  // 必須項目チェック
+  if (!height || !weight || !age || !sex) {
+    document.getElementById('no-input-msg').style.display = '';
+    document.getElementById('result-tabs').style.display  = 'none';
+    clearResults();
+    return;
+  }
+  document.getElementById('no-input-msg').style.display = 'none';
+  document.getElementById('result-tabs').style.display  = '';
+
+  // 体重計算
+  const hm  = height / 100;
+  const bmi = weight / (hm * hm);
+  const ibw = hm * hm * (sex === 'female' ? 21 : 22);
+  const calcBW = bmi >= 30 ? ibw + 0.25 * (weight - ibw) : weight;
+  const bwType = bmi >= 30 ? '補正体重' : '実体重';
+
+  // BMIチップ更新
+  const chips = [];
+  chips.push(`BMI <strong>${bmi.toFixed(1)}</strong> kg/m²`);
+  chips.push(`IBW <strong>${ibw.toFixed(1)}</strong> kg`);
+  const chipClass = bmi >= 30 ? 'info-chip chip-adj' : bmi < 18.5 ? 'info-chip chip-low' : 'info-chip';
+  chips.push(`<span class="${chipClass}">計算用体重 <strong>${calcBW.toFixed(1)}</strong> kg（${bwType}）</span>`);
+
+  document.getElementById('bw-info').innerHTML = chips.map(c => `<span class="info-chip">${c}</span>`).join('');
+
+  // NRS-2002
+  const nrsVal = parseFloat(document.getElementById('nrs').value);
+  const nrsHigh = (!isNaN(nrsVal) && nrsVal >= 3) || currentWard === 'icu';
+
+  // 合併疾患
+  const getCheck = id => { const el = document.getElementById(id); return el ? el.checked : false; };
+  const cond = {
+    dm:       getCheck('c-dm'),
+    ckd:      getCheck('c-ckd'),
+    copd:     getCheck('c-copd'),
+    hf:       getCheck('c-hf'),
+    gi:       getCheck('c-gi'),
+    diarrhea: getCheck('c-diarrhea'),
+    malnut:   getCheck('c-malnut') || nrsHigh,
+    refeed:   getCheck('c-refeed'),
+    dialysis: getCheck('c-dialysis') || false,
+    rrt:      currentWard === 'icu' ? (document.getElementById('rrt').value || 'none') : 'none',
+  };
+
+  const method = document.getElementById('method').value;
+  const route  = document.getElementById('route').value;
+  const pct    = (parseFloat(document.getElementById('pct').value) || 100) / 100;
+  const hours  = parseFloat(document.getElementById('hours').value) || 24;
+  const times  = parseFloat(document.getElementById('times').value) || 4;
+  const fluidLimit  = parseFloat(document.getElementById('fluid-limit').value) || null;
+  const flushMl     = parseFloat(document.getElementById('flush').value) || 200;
+  const otherFluid  = parseFloat(document.getElementById('other-fluid').value) || 0;
+
+  let icuDay = 'mid', hemodynamics = 'stable', rrt = 'none';
+  if (currentWard === 'icu') {
+    icuDay       = document.getElementById('icu-day').value;
+    hemodynamics = document.getElementById('hemodynamics').value;
+    rrt          = document.getElementById('rrt').value;
+  }
+  const stress   = currentWard === 'gen' ? document.getElementById('stress').value : 'none';
+  const activity = currentWard === 'gen' ? document.getElementById('activity').value : 'bed';
+
+  // ── カロリー目標 ──────────────────────────────
+  let kcalPerKg, kcalNote;
+  if (currentWard === 'icu') {
+    if (hemodynamics === 'shock') {
+      kcalPerKg = 10;
+      kcalNote = 'ショック状態：Trophic feeding（10 kcal/kg）。循環動態安定化後に漸増。JCCNG2024: ショック状態での通常量投与は禁忌。';
+    } else if (icuDay === 'early' || hemodynamics === 'unstable') {
+      kcalPerKg = 20;
+      kcalNote = 'ICU急性期早期（1〜2日目）または循環動態不安定：20 kcal/kg。JCCNG2024 CQ1-3: 初期からの過剰投与は非推奨（GRADE 2B）。';
+    } else {
+      kcalPerKg = 25;
+      kcalNote = 'ICU回復期：25 kcal/kg（20〜25 kcal/kg の範囲）。JCCNG2024: 早期経腸栄養を弱く推奨（GRADE 2C）。';
+    }
+  } else {
+    // 一般病棟：侵襲度＋活動レベルで補正
+    const stressMap  = { none: 25, mild: 26, moderate: 28, severe: 30 };
+    const activityMap = { bed: 0, low: 1.5, moderate: 3 };
+    kcalPerKg = stressMap[stress] + (activityMap[activity] || 0);
+    kcalNote = `一般病棟：${kcalPerKg} kcal/kg（侵襲度 ${stress}＋活動レベル補正）。JSPEN GL: エネルギー投与量は個々の病態に合わせて設定（25〜30 kcal/kg）。`;
+  }
+
+  // ── タンパク質目標 ──────────────────────────────
+  let protPerKg, protNote;
+  if (cond.ckd && !cond.dialysis && rrt === 'none') {
+    protPerKg = currentWard === 'icu' ? 0.8 : 0.6;
+    protNote = `CKD（非透析）：${protPerKg} g/kg。腎機能保護のため蛋白制限が重要。JSPEN GL Part IV 腎不全: 保存期CKDでは低蛋白食を推奨。`;
+  } else if (cond.dialysis || rrt !== 'none') {
+    protPerKg = 1.8;
+    protNote = '腎代替療法中（CRRT/透析）：1.8 g/kg。CRRTではアミノ酸喪失が著しいため増量。JCCNG2024: CRRT施行中は1.5〜2.5 g/kg/dayのタンパク補充を考慮。';
+  } else if (currentWard === 'icu') {
+    protPerKg = hemodynamics === 'shock' ? 0.8 : 1.5;
+    protNote = hemodynamics === 'shock'
+      ? 'ショック状態：0.8 g/kg（安定化まで低量で管理）。'
+      : 'ICU標準：1.5 g/kg（目標 1.2〜2.0 g/kg）。JCCNG2024 CQ1-4: >1.2 g/kg/dayを弱く推奨（GRADE 2D）。';
+  } else {
+    const stressProt = { none: 1.0, mild: 1.0, moderate: 1.2, severe: 1.5 };
+    protPerKg = stressProt[stress] || 1.0;
+    protNote = `一般病棟：${protPerKg} g/kg。JSPEN GL: 病態・侵襲度に応じて1.0〜1.5 g/kgを目安に設定。`;
+  }
+
+  const targetKcal = Math.round(kcalPerKg * calcBW * pct);
+  const targetProt = Math.round(protPerKg * calcBW * 10) / 10;
+
+  // ── 製剤選択（プランA/B・手動選択） ────────────
+  const planAResult = selectFormula(cond, currentWard, bmi.toFixed(1), method);
+  const planAName   = planAResult.name;
+  const planAGl     = planAResult.gl;
+  const planBResult = selectSecondaryFormula(planAName, cond, currentWard, method);
+  const planBName   = planBResult.name;
+  const planBReason = planBResult.reason;
+
+  // 使用する製剤（手動選択 > 自動）
+  const isManual = !!selectedFormula && selectedFormula !== planAName && selectedFormula !== planBName;
+  const fName    = selectedFormula || planAName;
+  const glText   = fName === planAName ? planAGl
+                 : fName === planBName ? planBReason
+                 : `手動選択：${FORMULAS[fName]?.note || ''}`;
+
+  // アクティブ製剤の投与量計算（computeFormulaStats使用）
+  const activeStats = computeFormulaStats(fName, targetKcal, targetProt, method, hours, times, calcBW);
+  const f            = activeStats.f;
+  const { volPerDay, packs, providedKcal, providedProt, providedSalt, providedK,
+          providedWater, dailyCost, rateStr, volStr, rateLabelStr, volLabelStr } = activeStats;
+
+  // プランA/B のスナップショット（表示用）
+  const planAStats = computeFormulaStats(planAName, targetKcal, targetProt, method, hours, times, calcBW);
+  const planBStats = computeFormulaStats(planBName, targetKcal, targetProt, method, hours, times, calcBW);
+
+  // 計算結果を保存
+  R = {
+    calcBW, bmi, ibw, bwType, height, weight, age, sex,
+    currentWard, icuDay, hemodynamics, rrt,
+    stress, activity, cond, method, route, pct, hours, times,
+    fluidLimit, flushMl, otherFluid,
+    kcalPerKg, targetKcal, kcalNote,
+    protPerKg, targetProt, protNote,
+    fName, f, glText, isManual,
+    planAName, planAGl, planAStats,
+    planBName, planBReason, planBStats,
+    volPerDay, packs,
+    providedKcal, providedProt, providedSalt, providedK, providedWater,
+    dailyCost, rateStr, volStr, rateLabelStr, volLabelStr,
+    nrsHigh, nrsVal
+  };
+
+  // 各タブを描画
+  renderStats();
+  renderTargets();
+  renderFormula();
+  renderStepUp();
+  renderFluid();
+  renderOrderSheet();
+}
+
+// ══════════════════════════════════════════════════
+// Stat カード更新
+// ══════════════════════════════════════════════════
+function renderStats() {
+  document.getElementById('stat-kcal').textContent = R.targetKcal;
+  document.getElementById('stat-prot').textContent = R.targetProt.toFixed(1);
+  document.getElementById('stat-bw').textContent   = R.calcBW.toFixed(1);
+  document.getElementById('stat-bw-unit').textContent = `kg (${R.bwType})`;
+}
+
+// ══════════════════════════════════════════════════
+// TAB: 栄養目標
+// ══════════════════════════════════════════════════
+function renderTargets() {
+  const { calcBW, bmi, ibw, bwType, targetKcal, kcalPerKg, pct,
+          targetProt, protPerKg, kcalNote, protNote, glText, nrsHigh, nrsVal } = R;
+
+  const pctNote = pct !== 1 ? `<span style="color:var(--orange-mid);"> × ${Math.round(pct*100)}%調整適用</span>` : '';
+
+  let html = '';
+
+  // NRS警告
+  if (nrsHigh) {
+    html += `<div class="alert alert-warning">⚠️ <div><b>栄養サポート推奨（NRS≥3 / ICU患者）</b>：積極的な栄養管理が必要です。${!isNaN(nrsVal) ? `NRS-2002スコア: ${nrsVal}点` : 'ICU患者は全例高栄養リスクと判断します。'}</div></div>`;
+  }
+
+  html += `
+  <table class="data-table">
+    <tbody>
+      <tr><td style="color:var(--gray-600);">BMI</td>
+          <td><b>${bmi.toFixed(1)}</b> kg/m²</td>
+          <td style="font-size:11px;color:var(--gray-600);">${bmi < 18.5 ? '⚠️ 低体重' : bmi >= 30 ? '⚠️ 肥満（補正体重使用）' : '普通体重'}</td></tr>
+      <tr><td style="color:var(--gray-600);">標準体重 (IBW)</td>
+          <td><b>${ibw.toFixed(1)}</b> kg</td>
+          <td style="font-size:11px;color:var(--gray-600);">身長²× ${R.sex==='female'?21:22}</td></tr>
+      <tr><td style="color:var(--gray-600);">計算用体重</td>
+          <td><b>${calcBW.toFixed(1)}</b> kg</td>
+          <td style="font-size:11px;color:var(--gray-600);">${bwType}${bmi>=30?' (IBW+0.25×(ABW-IBW))':''}</td></tr>
+      <tr><td style="color:var(--gray-600);">目標カロリー</td>
+          <td><b>${targetKcal}</b> kcal/日</td>
+          <td style="font-size:11px;color:var(--gray-600);">${kcalPerKg} kcal/kg × ${calcBW.toFixed(1)} kg${pctNote}</td></tr>
+      <tr><td style="color:var(--gray-600);">目標タンパク質</td>
+          <td><b>${targetProt.toFixed(1)}</b> g/日</td>
+          <td style="font-size:11px;color:var(--gray-600);">${protPerKg} g/kg × ${calcBW.toFixed(1)} kg</td></tr>
+    </tbody>
+  </table>
+  `;
+  document.getElementById('target-details').innerHTML = html;
+
+  // GL根拠
+  document.getElementById('gl-card').style.display = '';
+  document.getElementById('gl-content').innerHTML = `
+    <div class="gl-note">
+      <b>カロリー根拠：</b><br>${kcalNote}<br><br>
+      <b>タンパク質根拠：</b><br>${protNote}<br><br>
+      <b>製剤選択根拠：</b><br>${glText}<br><br>
+      <b>参照文献：</b><br>
+      ・日本版重症患者の栄養療法ガイドライン 2024（JCCNG2024）- 日本集中治療医学会<br>
+      ・静脈経腸栄養ガイドライン 第3版 - 日本静脈経腸栄養学会（JSPEN）<br>
+      ・院内濃厚流動食栄養成分表（令和5年7月1日改訂）
+    </div>
+  `;
+}
+
+// ══════════════════════════════════════════════════
+// TAB: 製剤・投与
+// ══════════════════════════════════════════════════
+function renderFormula() {
+  const { fName, f, targetKcal, targetProt, cond,
+          providedKcal, providedProt, providedSalt, providedK, providedWater,
+          volStr, volLabelStr, rateStr, rateLabelStr, dailyCost,
+          planAName, planAStats, planBName, planBStats, planBReason,
+          isManual, method, hours, times, calcBW } = R;
+
+  const kcalPct = Math.round(providedKcal / targetKcal * 100);
+  const protPct = Math.round(providedProt  / targetProt  * 100);
+  const cls = v => v < 80 ? 'val-low' : v > 120 ? 'val-high' : 'val-ok';
+
+  // ── プランカード描画ヘルパー ──
+  function planCardHtml(label, badgeClass, name, stats, isActive, onClickFn, reason) {
+    const pc = stats.kcalPct;
+    const pp = stats.protPct;
+    const pctCls = pc < 80 ? 'fcard-pct-low' : pc > 120 ? 'fcard-pct-high' : 'fcard-pct-ok';
+    return `
+    <div class="plan-card ${isActive ? (label==='プランA' ? 'plan-active' : label==='プランB' ? 'plan-b-active' : 'plan-active') : ''}"
+         onclick="${onClickFn}">
+      <div><span class="plan-badge ${badgeClass}">${label}</span>
+      ${isActive ? `<span style="font-size:10px;font-weight:700;color:${label==='プランA'?'var(--green-dark)':'var(--blue-mid)'};">&nbsp;✓ 選択中</span>` : ''}</div>
+      <div class="plan-fname">${name}</div>
+      <div class="plan-indication">${FORMULAS[name].indication}</div>
+      <div class="plan-stats">
+        <span class="plan-stat">${stats.volStr}</span>
+        <span class="plan-stat">｜ <b>${stats.rateStr}</b></span>
+        <span class="fcard-pct ${pctCls}">Kcal ${pc}%</span>
+        <span class="fcard-pct ${pp<80?'fcard-pct-low':pp>120?'fcard-pct-high':'fcard-pct-ok'}">Prot ${pp}%</span>
+      </div>
+      ${!isActive ? `<button class="plan-select-btn" onclick="event.stopPropagation();pickFormula('${name}')">このプランを選択</button>` : ''}
+      ${reason ? `<div style="font-size:10px;color:var(--gray-600);margin-top:6px;line-height:1.5;">${reason}</div>` : ''}
+    </div>`;
+  }
+
+  const activeIsA = fName === planAName && !isManual;
+  const activeIsB = fName === planBName && !isManual;
+
+  let html = `<div class="card">
+    <div class="card-header">💡 推奨製剤プラン
+      ${isManual ? `<span class="plan-badge badge-manual" style="margin-left:auto;">手動選択中</span>` : ''}
+    </div>
+    <div class="card-body">
+      <div class="plan-row">
+        ${planCardHtml('プランA', 'badge-a', planAName, planAStats, activeIsA,
+          `pickFormula('${planAName}')`, '')}
+        ${planCardHtml('プランB', 'badge-b', planBName, planBStats, activeIsB,
+          `pickFormula('${planBName}')`, planBReason)}
+      </div>
+      ${isManual ? `<div class="alert alert-warning" style="margin-bottom:0;">
+        ⚠️ 手動選択中：<b>${fName}</b>（自動推奨はプランA）
+        <button onclick="resetFormulaSelection()" style="margin-left:10px;padding:2px 10px;border:1px solid var(--orange-mid);border-radius:4px;background:white;color:var(--orange-mid);font-size:11px;cursor:pointer;font-family:inherit;">自動選択に戻す</button>
+      </div>` : ''}
+    </div>
+  </div>`;
+
+  // ── 選択中製剤の詳細 ──
+  html += `
+  <div class="card">
+    <div class="card-header">📊 選択中製剤の投与詳細 — <span style="color:var(--green-dark);">${fName}</span></div>
+    <div class="card-body">
+      <div class="formula-reason" style="margin-bottom:10px;">${f.note}</div>
+      <div style="font-size:11px;color:var(--gray-600);margin-bottom:8px;">【適応】${f.indication}　|　推定費用 約${dailyCost.toLocaleString()}円/日${f.price?`　|　${f.price}円/100kcal`:''}
+      </div>
+      <table class="data-table">
+        <thead><tr><th>項目</th><th>値</th><th>目標</th><th>充足率</th><th>/kg</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>エネルギー</td>
+            <td class="${cls(kcalPct)}">${providedKcal} kcal</td>
+            <td>${targetKcal} kcal</td>
+            <td class="${cls(kcalPct)}">${kcalPct}%</td>
+            <td>${(providedKcal/calcBW).toFixed(1)} kcal/kg</td>
+          </tr>
+          <tr>
+            <td>タンパク質</td>
+            <td class="${cls(protPct)}">${providedProt} g</td>
+            <td>${targetProt.toFixed(1)} g</td>
+            <td class="${cls(protPct)}">${protPct}%</td>
+            <td>${(providedProt/calcBW).toFixed(2)} g/kg</td>
+          </tr>
+          <tr><td>${volLabelStr}</td><td><b>${volStr}</b></td><td>—</td><td>—</td><td>—</td></tr>
+          <tr><td>${rateLabelStr}</td><td><b>${rateStr}</b></td><td>—</td><td>—</td><td>—</td></tr>
+          <tr><td>食塩相当量</td><td>${providedSalt} g</td><td>（病態に応じて）</td><td>—</td><td>—</td></tr>
+          <tr><td>カリウム</td><td>${providedK} mg</td><td>（病態に応じて）</td><td>—</td><td>—</td></tr>
+          <tr><td>製剤内水分</td><td>${providedWater} ml</td><td>—</td><td>—</td><td>—</td></tr>
+          ${f.osmol ? `<tr><td>浸透圧</td><td>${f.osmol > 500 ? `<span style="color:var(--orange-mid);font-weight:700;">⚠️ ${f.osmol} mOsm/L（高）</span>` : `${f.osmol} mOsm/L`}</td><td>—</td><td>—</td><td>—</td></tr>` : ''}
+        </tbody>
+      </table>`;
+
+  if (protPct < 80) html += `<div class="alert alert-warning">⚠️ タンパク質充足率が ${protPct}% と低値です。製剤の変更または蛋白質モジュールの追加を検討してください。</div>`;
+  if (cond.refeed)  html += `<div class="alert alert-danger">⚠️ リフィーディング症候群リスクあり：開始は目標量の25〜50%から。血清P・K・Mgを毎日確認し、低下があれば補充しながら漸増してください。</div>`;
+  if (f.osmol && f.osmol > 500) html += `<div class="alert alert-warning">⚠️ 高浸透圧製剤（${f.osmol} mOsm/L）：開始速度をゆっくり設定し、下痢・腹部膨満に注意しながら増量する。</div>`;
+  html += `</div></div>`;
+
+  // ── 全製剤グリッド ──
+  html += `<div class="card">
+    <div class="card-header">📋 全採用製剤から選択（${Object.keys(FORMULAS).length}製剤）</div>
+    <div class="card-body">
+      <div style="font-size:11px;color:var(--gray-600);margin-bottom:8px;">クリックすると選択中製剤として設定します。充足率・投与量は現在の目標値で自動計算。</div>
+      <div class="formula-grid">`;
+
+  Object.keys(FORMULAS).forEach(name => {
+    const st = computeFormulaStats(name, targetKcal, targetProt, method, hours, times, calcBW);
+    const isActive = name === fName;
+    const kpc = st.kcalPct;
+    const ppc = st.protPct;
+    const kCls = kpc < 80 ? 'fcard-pct-low' : kpc > 120 ? 'fcard-pct-high' : 'fcard-pct-ok';
+    const pCls = ppc < 80 ? 'fcard-pct-low' : ppc > 120 ? 'fcard-pct-high' : 'fcard-pct-ok';
+    const fmla = FORMULAS[name];
+    const isPlanA = name === planAName;
+    const isPlanB = name === planBName;
+    html += `
+    <div class="fcard${isActive ? ' fcard-active' : ''}" onclick="pickFormula('${name}')">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:4px;">
+        <div class="fcard-name">${name}</div>
+        <div style="display:flex;gap:2px;flex-shrink:0;">
+          ${isPlanA ? '<span class="plan-badge badge-a" style="font-size:9px;padding:1px 5px;">A</span>' : ''}
+          ${isPlanB ? '<span class="plan-badge badge-b" style="font-size:9px;padding:1px 5px;">B</span>' : ''}
+        </div>
+      </div>
+      <div class="fcard-ind">${fmla.indication}</div>
+      <div class="fcard-nums">
+        <span class="fcard-num">${fmla.isPack ? `${fmla.packKcal}kcal/P` : `${fmla.kcalPer100}kcal/100ml`}</span>
+        <span class="fcard-num">Prot ${fmla.isPack ? fmla.protein+'g/P' : fmla.protein+'g/100ml'}</span>
+      </div>
+      <div style="margin-top:4px;">
+        <span class="fcard-pct ${kCls}">E ${kpc}%</span>
+        <span class="fcard-pct ${pCls}" style="margin-left:3px;">P ${ppc}%</span>
+        <span style="font-size:10px;color:var(--gray-600);margin-left:4px;">${st.rateStr}</span>
+      </div>
+    </div>`;
+  });
+
+  html += `</div>
+    ${selectedFormula ? `<div style="text-align:center;margin-top:8px;">
+      <button onclick="resetFormulaSelection()" style="padding:5px 16px;border:1px solid var(--gray-300);border-radius:5px;background:white;color:var(--gray-700);font-size:12px;cursor:pointer;font-family:inherit;">🔄 自動推奨（プランA）に戻す</button>
+    </div>` : ''}
+    </div></div>`;
+
+  document.getElementById('formula-content').innerHTML = html;
+}
+
+// ══════════════════════════════════════════════════
+// TAB: ステップアップ
+// ══════════════════════════════════════════════════
+function renderStepUp() {
+  const { method, volPerDay, hours, times, packs, f, cond,
+          hemodynamics, icuDay, currentWard } = R;
+  const refeed = cond.refeed;
+  const isPack = f.isPack;
+
+  let html = '';
+
+  if (refeed) {
+    html += `<div class="refeed-box">⚠️ <b>リフィーディング症候群対策プロトコル：</b>開始は目標量の25%から。2日ごとに増量。血清P・K・Mgを毎日測定し、低下があれば増量を延期して補充を優先。</div>`;
+  }
+
+  if (isPack || method === 'semisolid') {
+    html += `<div class="alert alert-info">💡 半固形・パック製剤は初日から目標パック数を投与します。消化管耐性を確認しながら1パックずつ増量し、目標（${packs}パック/日）を目指してください。</div>`;
+    html += buildToleranceSection(method, currentWard);
+    html += buildMonitorSection();
+    document.getElementById('stepup-content').innerHTML = html;
+    return;
+  }
+
+  // ── 持続投与のタイムライン ──
+  if (method === 'continuous') {
+    const targetRate = Math.round(volPerDay / hours);
+    let startRate, stepNote;
+    const highOsmol = f.osmol && f.osmol > 500;
+
+    if (hemodynamics === 'shock') {
+      startRate = 10;
+      stepNote = 'ショック状態のためtrophic feeding（10 ml/hr）から開始。循環動態安定後に漸増。';
+    } else if (refeed) {
+      startRate = Math.max(10, Math.round(targetRate * 0.25 / 5) * 5);
+      stepNote = 'リフィーディングリスク：目標速度の25%から開始し、電解質モニタリングしながら2日ごとに増量。';
+    } else if (hemodynamics === 'unstable') {
+      startRate = Math.max(15, Math.round(targetRate * 0.3 / 5) * 5);
+      stepNote = '循環動態不安定：低速から開始し、安定を確認しながら慎重に増量。';
+    } else if (highOsmol) {
+      startRate = Math.max(20, Math.round(targetRate * 0.3 / 5) * 5);
+      stepNote = '高浸透圧製剤のため消化管症状（下痢・腹痛）に注意しながら緩徐に増量。';
+    } else if (icuDay === 'early') {
+      startRate = Math.max(15, Math.round(targetRate * 0.35 / 5) * 5);
+      stepNote = 'ICU急性期早期：少量から開始し、1〜2日で目標速度へ漸増。';
+    } else {
+      startRate = Math.max(20, Math.round(targetRate * 0.4 / 5) * 5);
+      stepNote = '標準的ステップアップ：1〜2日で目標速度へ到達を目指す。';
+    }
+
+    const stepInterval = refeed ? 2 : 1;
+    const steps = refeed ? 4 : (currentWard === 'icu' ? 3 : 2);
+    const remaining = targetRate - startRate;
+    const stepSize = Math.max(5, Math.round(remaining / steps / 5) * 5);
+
+    const days = [];
+    let cur = startRate, day = 1;
+    days.push({ day, rate: cur, vol: Math.round(cur * hours), pct: Math.round(cur / targetRate * 100) });
+    while (cur < targetRate && day <= 14) {
+      if (!refeed || day % stepInterval === 0) cur = Math.min(targetRate, cur + stepSize);
+      day++;
+      days.push({ day, rate: cur, vol: Math.round(cur * hours), pct: Math.round(cur / targetRate * 100) });
+    }
+
+    // タイムライン（7列グリッド、超える場合はスクロール）
+    const timelineCols = Math.min(days.length, 7);
+    html += `<div class="alert alert-info">📌 ${stepNote}　目標速度：<b>${targetRate} ml/hr</b>（${hours}時間投与 / 計 ${volPerDay.toLocaleString()} ml/日）</div>`;
+    html += `<div style="display:grid;grid-template-columns:repeat(${timelineCols},1fr);gap:4px;margin-bottom:10px;overflow-x:auto;">`;
+    days.forEach(d => {
+      const isGoal = d.pct >= 100;
+      html += `<div class="day-card${isGoal?' is-target':''}">
+        <div class="day-label">Day ${d.day}${isGoal?' ✅':''}</div>
+        <div class="day-pct">${d.rate} ml/hr</div>
+        <div class="day-val">${d.vol.toLocaleString()} ml</div>
+        <div class="day-note">${d.pct}%</div>
+      </div>`;
+    });
+    html += `</div>`;
+
+    // 詳細テーブル
+    const checkpoints = [
+      'カテーテル位置確認・胃残留測定',
+      '胃残留確認（4〜6h ごと）・腹部症状・血糖',
+      '胃残留・消化器症状・電解質・血糖',
+      '栄養マーカー（Alb・Prealbumin）・体重',
+    ];
+    html += `<div style="overflow-x:auto;"><table class="data-table">
+      <thead><tr><th>日程</th><th>投与速度</th><th>1日量</th><th>目標比</th><th>チェックポイント</th></tr></thead>
+      <tbody>`;
+    days.forEach((d, i) => {
+      const isGoal = d.pct >= 100;
+      const cp = checkpoints[Math.min(i, checkpoints.length - 1)];
+      html += `<tr style="${isGoal?'background:var(--green-bg);font-weight:700;':''}">
+        <td>Day ${d.day}${isGoal?' ✅':''}</td>
+        <td><b>${d.rate} ml/hr</b></td>
+        <td>${d.vol.toLocaleString()} ml</td>
+        <td>
+          <div style="display:flex;align-items:center;gap:5px;">
+            ${d.pct}%
+            <div class="progress-wrap" style="flex:1;min-width:40px;">
+              <div class="progress-bar ${d.pct>=100?'pb-ok':d.pct>=60?'pb-warn':'pb-danger'}" style="width:${Math.min(100,d.pct)}%"></div>
+            </div>
+          </div>
+        </td>
+        <td style="font-size:11px;color:var(--gray-600);">${cp}</td>
+      </tr>`;
+    });
+    html += `</tbody></table></div>`;
+    html += `<div style="font-size:10px;color:var(--gray-600);margin-bottom:8px;">※ 耐性不良時は下記プロトコルに従って速度調整または中断を判断。</div>`;
+
+  } else {
+    // ── 間欠投与のタイムライン ──
+    const targetVpf = Math.round(volPerDay / times);
+    let startVol;
+    let stepNote;
+
+    if (refeed) {
+      startVol = Math.max(50, Math.round(targetVpf * 0.25 / 50) * 50);
+      stepNote = 'リフィーディングリスク：目標量の25%から開始し、2日ごとに増量。';
+    } else if (currentWard === 'icu') {
+      startVol = Math.max(100, Math.round(targetVpf * 0.3 / 50) * 50);
+      stepNote = 'ICU間欠投与：少量から開始し、消化管耐性を確認しながら毎日増量。';
+    } else {
+      startVol = Math.max(100, Math.round(targetVpf * 0.4 / 50) * 50);
+      stepNote = '一般病棟間欠投与：目標量の40%から開始し、1〜2日で到達を目指す。';
+    }
+
+    const stepInterval = refeed ? 2 : 1;
+    const stepsN = refeed ? 4 : 3;
+    const stepSize = Math.max(50, Math.round((targetVpf - startVol) / stepsN / 50) * 50);
+
+    const days = [];
+    let cur = startVol, day = 1;
+    days.push({ day, vol: cur, total: cur * times, pct: Math.round(cur / targetVpf * 100) });
+    while (cur < targetVpf && day <= 14) {
+      if (!refeed || day % stepInterval === 0) cur = Math.min(targetVpf, cur + stepSize);
+      day++;
+      days.push({ day, vol: cur, total: cur * times, pct: Math.round(cur / targetVpf * 100) });
+    }
+
+    html += `<div class="alert alert-info">📌 ${stepNote}　目標：<b>${targetVpf} ml × ${times}回/日</b>（計 ${volPerDay.toLocaleString()} ml）</div>`;
+    html += `<div style="display:grid;grid-template-columns:repeat(${Math.min(days.length,7)},1fr);gap:4px;margin-bottom:10px;">`;
+    days.forEach(d => {
+      const isGoal = d.pct >= 100;
+      html += `<div class="day-card${isGoal?' is-target':''}">
+        <div class="day-label">Day ${d.day}${isGoal?' ✅':''}</div>
+        <div class="day-pct">${d.vol} ml</div>
+        <div class="day-val">${times}回/日</div>
+        <div class="day-note">${d.pct}%</div>
+      </div>`;
+    });
+    html += `</div>`;
+
+    const checkpoints = [
+      '嘔吐・腹部膨満・胃残留を確認',
+      '投与前胃残留確認・消化器症状・血糖',
+      '消化器症状・電解質・体重',
+      '栄養マーカー（Alb・Prealbumin）',
+    ];
+    html += `<div style="overflow-x:auto;"><table class="data-table">
+      <thead><tr><th>日程</th><th>1回量</th><th>回数</th><th>1日量</th><th>目標比</th><th>チェックポイント</th></tr></thead>
+      <tbody>`;
+    days.forEach((d, i) => {
+      const isGoal = d.pct >= 100;
+      const cp = checkpoints[Math.min(i, checkpoints.length - 1)];
+      html += `<tr style="${isGoal?'background:var(--green-bg);font-weight:700;':''}">
+        <td>Day ${d.day}${isGoal?' ✅':''}</td>
+        <td><b>${d.vol} ml</b></td>
+        <td>${times}回</td>
+        <td>${d.total.toLocaleString()} ml</td>
+        <td>
+          <div style="display:flex;align-items:center;gap:5px;">
+            ${d.pct}%
+            <div class="progress-wrap" style="flex:1;min-width:40px;">
+              <div class="progress-bar ${d.pct>=100?'pb-ok':d.pct>=60?'pb-warn':'pb-danger'}" style="width:${Math.min(100,d.pct)}%"></div>
+            </div>
+          </div>
+        </td>
+        <td style="font-size:11px;color:var(--gray-600);">${cp}</td>
+      </tr>`;
+    });
+    html += `</tbody></table></div>`;
+    html += `<div style="font-size:10px;color:var(--gray-600);margin-bottom:8px;">※ 耐性不良時は下記プロトコルに従って調整。</div>`;
+  }
+
+  html += buildToleranceSection(method, currentWard);
+  html += buildMonitorSection();
+  document.getElementById('stepup-content').innerHTML = html;
+}
+
+// ── 耐性不良プロトコル ──
+function buildToleranceSection(method, ward) {
+  const isCont = method === 'continuous';
+  const isICU  = ward === 'icu';
+  const residualLimit = isCont ? 500 : 200;
+
+  const residualAction = isCont
+    ? '<li>速度を<b>半量</b>に減速</li><li>1〜2時間後に再評価</li><li>改善しなければ<b>中断</b>し消化管運動促進薬を検討</li><li>残留 >500 ml が続く場合は<b>NJTへの変更</b>を検討</li>'
+    : '<li>次回投与を<b>中止</b>し1〜2時間後に再確認</li><li>改善すれば量を減らして再開</li><li>繰り返す場合は持続投与または<b>NJTへの変更</b>を検討</li>';
+
+  const diarrheaAction = '<li>投与速度を<b>20〜25%減速</b>（または1回量を減量）</li>'
+    + '<li>整腸薬・止瀉薬の使用を検討</li>'
+    + '<li>感染性下痢・CDI を除外</li>'
+    + '<li>下痢が続く場合は<b>消化態製剤（ペプタメンS）またはラクフィア</b>への変更を検討</li>'
+    + (isICU ? '<li>重症下痢（>1000 ml/日）では一時中断し補液管理</li>' : '');
+
+  const vomitingAction = '<li>直ちに投与を<b>中断</b>し誤嚥がないか確認（SpO₂・意識）</li>'
+    + '<li>頭部挙上を確認（30〜45°）</li>'
+    + '<li>消化管運動促進薬（メトクロプラミド等）を検討</li>'
+    + '<li>症状消失後に<b>低速・少量</b>から再開</li>'
+    + '<li>繰り返す場合は<b>幽門後投与（NJT・空腸瘻）</b>への変更を検討</li>';
+
+  return `
+    <div class="section-title">⚠️ 耐性不良時の対応プロトコル</div>
+    <div class="tol-grid">
+      <div class="tol-card">
+        <div class="tol-head">🔴 胃残留増加（>${residualLimit} ml）</div>
+        <div class="tol-body"><ul>${residualAction}</ul></div>
+      </div>
+      <div class="tol-card">
+        <div class="tol-head">🟡 下痢（Bristol 6〜7型 or ≥3回/日）</div>
+        <div class="tol-body"><ul>${diarrheaAction}</ul></div>
+      </div>
+      <div class="tol-card">
+        <div class="tol-head">🔴 嘔吐・逆流</div>
+        <div class="tol-body"><ul>${vomitingAction}</ul></div>
+      </div>
+    </div>
+  `;
+}
+
+// ══════════════════════════════════════════════════
+// 水分バランス計算ヘルパー（renderFluid / renderOrderSheet 共用）
+// ══════════════════════════════════════════════════
+function computeFluidBalance({ age, calcBW, providedWater, flushMl, otherFluid, fluidLimit, cond }) {
+  let mlPerKg, basis;
+  if (age >= 75)      { mlPerKg = 25; basis = '≥75歳：25 ml/kg'; }
+  else if (age >= 65) { mlPerKg = 30; basis = '65〜74歳：30 ml/kg'; }
+  else                { mlPerKg = 35; basis = '18〜64歳：35 ml/kg'; }
+
+  const hasRestriction = cond.hf || cond.ckd || cond.dialysis || !!fluidLimit;
+  if (hasRestriction && mlPerKg > 25) {
+    mlPerKg = 25; basis += '（水分制限対象：25 ml/kgに調整）';
+  }
+
+  const calcRequired = Math.round(mlPerKg * calcBW);
+  const required     = fluidLimit || calcRequired;
+  const flushRound   = Math.round(flushMl / 10) * 10;
+  const totalIn      = Math.round(providedWater) + flushRound + Math.round(otherFluid);
+  const additional   = Math.max(0, required - totalIn);
+  const excess       = Math.max(0, totalIn - required);
+  const totalPct     = Math.min(100, Math.round(totalIn / required * 100));
+  const overLimit    = !!(fluidLimit && totalIn > fluidLimit);
+  const barCls       = overLimit ? 'pb-danger' : totalPct >= 80 ? 'pb-ok' : 'pb-warn';
+
+  let addNote = '';
+  if (additional > 0) addNote = `経管チューブからの補水（白湯 ${additional} ml を分割投与）または輸液で補充を検討。`;
+  else if (excess > 0 && fluidLimit) addNote = `⚠️ 設定水分制限（${fluidLimit.toLocaleString()} ml）を ${excess} ml 超過しています。製剤の変更（高エネルギー密度製剤）またはその他水分の削減を検討してください。`;
+  else if (excess > 0) addNote = `水分過剰の可能性があります。IN/OUTバランスを毎日確認してください。`;
+  else addNote = `水分バランスは良好です。IN/OUTバランスを毎日確認してください。`;
+
+  return { mlPerKg, basis, calcRequired, required, flushRound, totalIn, additional, excess, totalPct, overLimit, barCls, addNote };
+}
+
+// ══════════════════════════════════════════════════
+// TAB: 水分バランス
+// ══════════════════════════════════════════════════
+function renderFluid() {
+  const fb = computeFluidBalance(R);
+  const { basis, required, calcRequired, fluidLimit, providedWater, flushRound, otherFluid,
+          totalIn, totalPct, barCls, additional, excess, addNote } = fb;
+
+  let html = `
+  <div class="water-row">
+    <span class="wr-label">📐 必要水分量（目安） <small style="font-size:10px;color:#999">${basis}</small></span>
+    <span class="wr-val">${required.toLocaleString()} ml/日${fluidLimit ? ' <small style="color:var(--red-mid);">(制限値)</small>' : ` <small style="color:var(--gray-600);">(計算値 ${calcRequired.toLocaleString()} ml)</small>`}</span>
+  </div>
+  <div style="margin:10px 0 5px;font-size:10px;font-weight:700;color:var(--gray-600);letter-spacing:0.3px;">水分の内訳</div>
+  <div class="water-row"><span class="wr-label">🧴 製剤中の水分</span><span class="wr-val">${Math.round(R.providedWater).toLocaleString()} ml</span></div>
+  <div class="water-row"><span class="wr-label">🚿 チューブ洗浄水</span><span class="wr-val">${flushRound} ml</span></div>
+  <div class="water-row"><span class="wr-label">💊 その他（輸液・内服等）</span><span class="wr-val">${Math.round(R.otherFluid).toLocaleString()} ml</span></div>
+  <div style="border-top:2px solid var(--gray-200);margin:8px 0;"></div>
+  <div class="water-row" style="margin-bottom:6px;">
+    <span style="font-weight:700;color:var(--gray-800);">合計摂取水分量</span>
+    <span class="wr-val" style="font-size:16px;">${totalIn.toLocaleString()} ml</span>
+  </div>
+  <div class="progress-wrap">
+    <div class="progress-bar ${barCls}" style="width:${totalPct}%;"></div>
+  </div>
+  <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--gray-600);margin-top:2px;">
+    <span>0</span><span>${totalPct}%充足</span><span>必要量 ${required.toLocaleString()} ml</span>
+  </div>
+  <div class="water-row" style="margin-top:8px;">
+    <span class="wr-label">${additional>0?'💧 不足：追加補水が必要':excess>0?'⚠️ 過剰分':'✅ 充足'}</span>
+    <span class="${additional>0?'wr-need':excess>0?'wr-warn':'wr-val'}" style="${additional>0?'font-size:15px;':''}">
+      ${additional>0?'+'+additional.toLocaleString()+' ml 追加':excess>0?excess.toLocaleString()+' ml 超過':'バランス良好'}
+    </span>
+  </div>
+  <div class="alert ${additional>0?'alert-info':excess>0?'alert-warning':'alert-success'}" style="margin-top:8px;">${addNote}</div>
+  `;
+  document.getElementById('fluid-content').innerHTML = html;
+}
+
+// ══════════════════════════════════════════════════
+// モニタリング項目HTML生成（renderStepUp内で使用）
+// ══════════════════════════════════════════════════
+function buildMonitorSection() {
+  const { cond, fName, currentWard } = R;
+  const items = [
+    { icon: '🩸', text: '<b>血糖管理</b>：開始後は2〜4時間ごとに測定。目標 140〜180 mg/dL（ICU）/ 空腹時<130 mg/dL（一般）。' },
+    { icon: '🔬', text: '<b>電解質</b>：Na・K・Cl・Ca・P・Mg を週2〜3回測定。開始後1週間は特に注意。' },
+    { icon: '📊', text: '<b>栄養マーカー</b>：Alb（2週ごと）、Prealbumin（週1回）、CRP、リンパ球数。' },
+    { icon: '⚖️', text: '<b>体重・IN/OUT</b>：毎日測定。浮腫・脱水の早期発見。' },
+  ];
+
+  if (currentWard === 'icu') {
+    items.push({ icon: '🫁', text: '<b>胃内残留確認</b>：4〜6時間ごとに確認。残留 >500 ml で速度減量または中断。昇圧剤使用中は特に慎重に。' });
+    items.push({ icon: '🦠', text: '<b>誤嚥性肺炎モニタリング</b>：SpO₂低下・発熱・CRP上昇。投与中は頭部挙上 30〜45° を維持。' });
+  }
+
+  if (cond.ckd)   items.push({ icon: '🧪', text: '<b>CKD管理</b>：BUN・Cr・K・P を週2〜3回。高K血症・高P血症に注意。尿量確認。' });
+  if (cond.dm)    items.push({ icon: '💉', text: '<b>血糖コントロール</b>：インスリン量の調整が必要な場合は製剤変更も検討。経腸栄養中断時の低血糖に注意。' });
+  if (cond.hf)    items.push({ icon: '💧', text: '<b>水分管理</b>：製剤中の水分も含めた正確なIN/OUTバランス管理。BNP・体重変化をフォロー。' });
+  if (cond.refeed || fName.includes('リーナレン'))
+    items.push({ icon: '⚠️', text: '<b>リフィーディング症候群</b>：開始後3〜5日は血清P・K・Mgを毎日測定。低下があれば補充しながら緩徐に増量。' });
+  if (fName.includes('ペプタメン') || fName.includes('ペプチーノ'))
+    items.push({ icon: '🌡️', text: '<b>消化管耐性</b>：下痢・腹部膨満・腹痛を定期確認。改善なければ投与速度調整または製剤変更。' });
+
+  return `
+    <div class="section-title">🔬 モニタリング項目</div>
+    ${items.map(it => `<div class="mon-item"><div class="mon-icon">${it.icon}</div><div class="mon-text">${it.text}</div></div>`).join('')}
+  `;
+}
+
+// ══════════════════════════════════════════════════
+// TAB: 投与指示サマリー
+// ══════════════════════════════════════════════════
+function renderOrderSheet() {
+  const { fName, f, targetKcal, targetProt, providedKcal, providedProt,
+          volStr, rateStr, rateLabelStr, volLabelStr,
+          currentWard, icuDay, hemodynamics, rrt,
+          calcBW, bmi, age, sex, method, hours, times, packs,
+          flushMl, otherFluid, fluidLimit, providedWater, cond } = R;
+
+  const ward = currentWard === 'icu' ? 'ICU / CCU' : '一般病棟';
+  const now = new Date();
+  const dateStr = `${now.getFullYear()}/${now.getMonth()+1}/${now.getDate()}`;
+
+  let html = `
+  <div class="order-summary">
+    <div class="order-title">経管栄養投与指示</div>
+    <table class="data-table">
+      <tbody>
+        <tr><td style="color:var(--gray-600);width:40%;">作成日</td><td>${dateStr}</td></tr>
+        <tr><td style="color:var(--gray-600);">病棟</td><td>${ward}</td></tr>
+        <tr><td style="color:var(--gray-600);">身長 / 体重</td><td>${R.height} cm / ${R.weight} kg（BMI ${bmi.toFixed(1)}）</td></tr>
+        <tr><td style="color:var(--gray-600);">計算用体重</td><td>${calcBW.toFixed(1)} kg（${R.bwType}）</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="order-summary">
+    <div class="order-title">栄養目標</div>
+    <table class="data-table">
+      <tbody>
+        <tr><td style="color:var(--gray-600);width:40%;">目標カロリー</td><td><b>${targetKcal} kcal/日</b></td></tr>
+        <tr><td style="color:var(--gray-600);">目標タンパク質</td><td><b>${targetProt.toFixed(1)} g/日</b></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="order-summary">
+    <div class="order-title">投与指示</div>
+    <table class="data-table">
+      <tbody>
+        <tr><td style="color:var(--gray-600);width:40%;">製剤名</td><td><b>${fName}</b></td></tr>
+        <tr><td style="color:var(--gray-600);">${volLabelStr}</td><td><b>${volStr}</b></td></tr>
+        <tr><td style="color:var(--gray-600);">${rateLabelStr}</td><td><b>${rateStr}</b></td></tr>
+        ${!f.isPack && method === 'continuous' ? `<tr><td style="color:var(--gray-600);">投与時間</td><td>${hours}時間/日</td></tr>` : ''}
+        ${!f.isPack && method === 'intermittent' ? `<tr><td style="color:var(--gray-600);">投与回数</td><td>${times}回/日</td></tr>` : ''}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="order-summary">
+    <div class="order-title">予定摂取量（推定）</div>
+    <table class="data-table">
+      <tbody>
+        <tr><td style="color:var(--gray-600);width:40%;">エネルギー</td>
+            <td>${providedKcal} kcal（目標比 ${Math.round(providedKcal/targetKcal*100)}%）</td></tr>
+        <tr><td style="color:var(--gray-600);">タンパク質</td>
+            <td>${providedProt} g（目標比 ${Math.round(providedProt/targetProt*100)}%）</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  `;
+
+  // ── 水分管理セクション（computeFluidBalance() で同期計算）──
+  const fb = computeFluidBalance(R);
+  const { basis: fbBasis, required: fbReq, calcRequired: fbCalc, flushRound: fbFlush,
+          totalIn: fbTotalIn, totalPct: fbPct, barCls: fbBarCls,
+          additional: fbAdd, excess: fbExcess, overLimit: fbOverLimit, addNote: fbNote } = fb;
+
+  const otherFluidRec = fbAdd > 0
+    ? `<span style="font-size:14px;font-weight:700;color:var(--green-dark);">白湯 ${fbAdd.toLocaleString()} ml を追加投与</span>（分割投与 or 輸液）`
+    : fbExcess > 0
+      ? `<span style="font-size:13px;font-weight:700;color:var(--red-mid);">追加補水は不要</span>（現在 ${fbExcess.toLocaleString()} ml 超過）`
+      : `<span style="font-size:13px;font-weight:700;color:var(--green-dark);">追加補水は不要</span>（水分充足）`;
+
+  const fluidLimitRow = fluidLimit
+    ? `<tr style="background:#fff5f5;"><td style="color:var(--red-mid);font-weight:700;">⚠️ 水分制限</td>
+        <td style="color:var(--red-mid);font-weight:700;">${fluidLimit.toLocaleString()} ml/日</td></tr>`
+    : '';
+
+  html += `
+  <div class="order-summary">
+    <div class="order-title">💧 水分管理</div>
+    <table class="data-table">
+      <tbody>
+        <tr><td style="color:var(--gray-600);width:46%;">必要水分量</td>
+            <td>${fbReq.toLocaleString()} ml/日
+              ${fluidLimit
+                ? `<small style="color:var(--red-mid);margin-left:4px;">(制限値)</small>`
+                : `<small style="color:var(--gray-600);margin-left:4px;">(計算値 ${fbCalc.toLocaleString()} ml — ${fbBasis})</small>`}
+            </td></tr>
+        ${fluidLimitRow}
+      </tbody>
+    </table>
+    <div style="margin:10px 0 4px;font-size:10px;font-weight:700;color:var(--gray-600);letter-spacing:0.3px;">水分内訳</div>
+    <table class="data-table">
+      <tbody>
+        <tr><td style="color:var(--gray-600);width:46%;">🧴 製剤中の水分</td><td>${Math.round(providedWater).toLocaleString()} ml</td></tr>
+        <tr><td style="color:var(--gray-600);">🚿 チューブ洗浄水</td><td>${fbFlush} ml</td></tr>
+        <tr><td style="color:var(--gray-600);">💊 その他（入力値）</td><td>${Math.round(otherFluid).toLocaleString()} ml</td></tr>
+        <tr style="border-top:2px solid var(--gray-300);">
+          <td style="font-weight:700;color:var(--gray-800);">合計摂取水分量</td>
+          <td style="font-weight:700;font-size:14px;">${fbTotalIn.toLocaleString()} ml</td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="progress-wrap" style="margin:8px 0 2px;">
+      <div class="progress-bar ${fbBarCls}" style="width:${fbPct}%;"></div>
+    </div>
+    <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--gray-600);margin-bottom:10px;">
+      <span>0</span><span>${fbPct}% 充足</span><span>必要量 ${fbReq.toLocaleString()} ml</span>
+    </div>
+    <div style="background:${fbAdd>0?'#ebf8f0':fbOverLimit?'#fff5f5':'#f0fff4'};border:1.5px solid ${fbAdd>0?'var(--green-mid)':fbOverLimit?'var(--red-mid)':'var(--green-mid)'};border-radius:8px;padding:10px 12px;">
+      <div style="font-size:10px;font-weight:700;color:var(--gray-600);margin-bottom:4px;">その他水分（推奨）</div>
+      <div>${otherFluidRec}</div>
+      <div style="margin-top:6px;font-size:11px;color:var(--gray-700);">${fbNote}</div>
+    </div>
+  </div>
+
+  <div class="alert alert-warning" style="font-size:11px;">
+    ⚠️ 本ツールの計算値はガイドラインおよびAIの医学知識に基づく参考値です。実際の処方は担当医が責任を持って判断してください。施設プロトコルと照合し、必要に応じて調整してください。
+  </div>
+  `;
+  document.getElementById('order-content').innerHTML = html;
+}
+
+// ══════════════════════════════════════════════════
+// 結果クリア
+// ══════════════════════════════════════════════════
+function clearResults() {
+  R = null;
+  ['stat-kcal','stat-prot','stat-bw'].forEach(id => document.getElementById(id).textContent = '—');
+  document.getElementById('stat-bw-unit').textContent = 'kg';
+  ['target-details','formula-content','stepup-content','fluid-content','order-content'].forEach(id => {
+    document.getElementById(id).innerHTML = '<p style="color:var(--gray-600);text-align:center;padding:20px;">患者情報を入力してください</p>';
+  });
+  document.getElementById('gl-card').style.display = 'none';
+}
+
+// ══════════════════════════════════════════════════
+// フォームリセット
+// ══════════════════════════════════════════════════
+function resetForm() {
+  if (!confirm('入力内容をすべてリセットしますか？')) return;
+  selectedFormula = null;
+  ['height','weight','age','nrs','fluid-limit','pct','flush','other-fluid'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = (id === 'pct') ? '100' : (id === 'flush') ? '200' : (id === 'other-fluid') ? '0' : '';
+  });
+  ['sex','icu-day','hemodynamics','ventilation','rrt','stress','activity','route','method','hours','times'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.selectedIndex = 0;
+  });
+  document.querySelectorAll('.cb-item input[type="checkbox"]').forEach(cb => {
+    cb.checked = false;
+    cb.closest('.cb-item').classList.remove('checked');
+  });
+  document.getElementById('bw-info').innerHTML = '';
+  currentWard = 'icu';
+  switchWard('icu');
+  updateMethodUI();
+  clearResults();
+  document.getElementById('no-input-msg').style.display = '';
+  document.getElementById('result-tabs').style.display = 'none';
+}
+
+// ── hidden クラス ──
+document.head.insertAdjacentHTML('beforeend', '<style>.hidden{display:none!important}</style>');
+</script>
+</body>
+</html>

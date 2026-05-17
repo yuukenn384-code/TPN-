@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="栄養ツール">
+<meta name="theme-color" content="#1a365d">
+<title>栄養管理ツール</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Hiragino Sans', sans-serif;
+  background: linear-gradient(135deg, #1a365d 0%, #2b6cb0 50%, #276749 100%);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  padding-top: calc(20px + env(safe-area-inset-top));
+  padding-bottom: calc(20px + env(safe-area-inset-bottom));
+}
+.header {
+  text-align: center;
+  color: white;
+  margin-bottom: 40px;
+}
+.header h1 {
+  font-size: 22px;
+  font-weight: 700;
+  margin-bottom: 6px;
+  letter-spacing: 0.05em;
+}
+.header p {
+  font-size: 12px;
+  opacity: 0.75;
+}
+.cards {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  max-width: 360px;
+}
+.card {
+  background: white;
+  border-radius: 18px;
+  padding: 24px 20px;
+  text-decoration: none;
+  color: inherit;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+  transition: transform .15s, box-shadow .15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.card:active { transform: scale(0.97); box-shadow: 0 4px 16px rgba(0,0,0,0.15); }
+.card-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 34px;
+  flex-shrink: 0;
+}
+.icon-green { background: linear-gradient(135deg, #1a4731, #38a169); }
+.icon-blue  { background: linear-gradient(135deg, #1a365d, #2b6cb0); }
+.card-text {}
+.card-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: #2d3748;
+  margin-bottom: 4px;
+}
+.card-sub {
+  font-size: 11px;
+  color: #718096;
+  line-height: 1.5;
+}
+.footer {
+  color: rgba(255,255,255,0.5);
+  font-size: 10px;
+  margin-top: 40px;
+  text-align: center;
+}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>🏥 栄養管理ツール</h1>
+  <p>JSPEN GL第3版 / JCCNG2024 準拠 ｜ 成人・医師専用</p>
+</div>
+
+<div class="cards">
+  <a class="card" href="enteral.html">
+    <div class="card-icon icon-green">🍶</div>
+    <div class="card-text">
+      <div class="card-title">経管栄養プランナー</div>
+      <div class="card-sub">経腸栄養剤の選択・投与量計算<br>ステップアップスケジュール</div>
+    </div>
+  </a>
+
+  <a class="card" href="tpn.html">
+    <div class="card-icon icon-blue">💉</div>
+    <div class="card-text">
+      <div class="card-title">TPN / PPN プランナー</div>
+      <div class="card-sub">静脈栄養の輸液設計・電解質管理<br>GIR・カロリー計算</div>
+    </div>
+  </a>
+</div>
+
+<div class="footer">個人使用目的 ｜ 実際の臨床判断は医師の責任のもとで行ってください</div>
+</body>
+</html>
