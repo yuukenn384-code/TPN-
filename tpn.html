@@ -734,6 +734,14 @@ body {
             <input type="number" id="oral-kcal" value="0" placeholder="0" min="0" max="3000" oninput="calculate()">
           </div>
         </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+              <input type="checkbox" id="refeed-manual" onchange="calculate()" style="width:auto;">
+              リフィーディング症候群リスクあり（長期絶食・高度低栄養歴等）
+            </label>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -859,45 +867,49 @@ body {
 
 <script>
 // ══════════════════════════════════════════════════════════════
-//  製剤データベース（サンプル — 添付文書で要確認）
+//  製剤データベース（添付文書照合済み・2026-07-18医療品質チェック）
+//  出典：ネオパレン1/2号＝大塚製薬工場インタビューフォーム（YJ 3259526G1037）
+//        フルカリック1/2/3号＝JAPIC添付文書2026年5月改訂第4版
+//        ビーフリード＝KEGG/JAPIC添付文書（500mL1袋中）
+//  単位統一：電解質は1袋あたり絶対量、P=mmol、Zn=mg換算
 // ══════════════════════════════════════════════════════════════
 const FORMULATIONS = [
   // ─── TPN（中心静脈）— 愛宕病院採用製剤 ──────────────
   {
     id: 'neopalen1', name: 'ネオパレン1号', type: 'TPN',
-    volume: 1500, energy: 840, aa: 60, glucose: 150, fat: 0,
-    na: 50,  k: 40,  ca: 9,   mg: 5,   p: 15, zn: 2.5,
+    volume: 1500, energy: 840, aa: 30, glucose: 180, fat: 0,
+    na: 75,  k: 33,  ca: 6,   mg: 6,   p: 7.6, zn: 1.96,
     note: '2チャンバー／ビタミン・微量元素含有・低カロリー水分補給型'
   },
   {
     id: 'neopalen2', name: 'ネオパレン2号', type: 'TPN',
-    volume: 1000, energy: 900, aa: 50, glucose: 175, fat: 0,
-    na: 35,  k: 45,  ca: 9,   mg: 5,   p: 20, zn: 2.5,
+    volume: 1000, energy: 820, aa: 30, glucose: 175, fat: 0,
+    na: 50,  k: 27,  ca: 5,   mg: 5,   p: 6, zn: 1.31,
     note: '2チャンバー／高カロリー型・ビタミン・微量元素含有'
   },
   {
     id: 'fulkalik1', name: 'フルカリック1号', type: 'TPN',
-    volume: 903, energy: 520, aa: 20, glucose: 110, fat: 0,
-    na: 35,  k: 20,  ca: 4.5, mg: 2.5, p: 10, zn: 0,
+    volume: 903, energy: 560, aa: 20, glucose: 120, fat: 0,
+    na: 50,  k: 30,  ca: 8.5, mg: 10, p: 8.07, zn: 1.31,
     note: '2チャンバー／開始時・低カロリー・脂肪乳剤は別注'
   },
   {
     id: 'fulkalik2', name: 'フルカリック2号', type: 'TPN',
-    volume: 1003, energy: 720, aa: 30, glucose: 150, fat: 0,
-    na: 35,  k: 30,  ca: 4.5, mg: 2.5, p: 15, zn: 0,
+    volume: 1003, energy: 820, aa: 30, glucose: 175, fat: 0,
+    na: 50,  k: 30,  ca: 8.5, mg: 10, p: 8.07, zn: 1.31,
     note: '2チャンバー／標準型・脂肪乳剤は別注'
   },
   {
     id: 'fulkalik3', name: 'フルカリック3号', type: 'TPN',
-    volume: 1103, energy: 900, aa: 40, glucose: 185, fat: 0,
-    na: 43.75, k: 37.5, ca: 5.5, mg: 3.5, p: 17.5, zn: 0,
+    volume: 1103, energy: 1160, aa: 40, glucose: 250, fat: 0,
+    na: 50, k: 30, ca: 8.5, mg: 10, p: 8.07, zn: 1.31,
     note: '2チャンバー／大容量標準型・脂肪乳剤は別注'
   },
   // ─── PPN（末梢静脈）— 愛宕病院採用製剤 ──────────────
   {
     id: 'bfluid', name: 'ビーフリード', type: 'PPN',
     volume: 500, energy: 210, aa: 15, glucose: 37.5, fat: 0,
-    na: 35,  k: 20,  ca: 2.5, mg: 1.25, p: 5, zn: 0,
+    na: 17.5,  k: 10,  ca: 2.5, mg: 2.5, p: 5, zn: 0.16,
     osmolarity: 833, note: '浸透圧比 約4／キシリトール含有・肝機能障害・糖尿病患者は要注意'
   },
   // ─── 脂肪乳剤（別注）─────────────────────────────────
@@ -917,7 +929,7 @@ const DRIP_PRESETS = [
   { id: 'ns',        name: '生理食塩水',       na: 154, k:  0 },
   { id: 'kn1',       name: 'KN1号（開始液）',   na:  77, k:  0 },
   { id: 'kn3',       name: 'KN3号（維持液）',   na:  50, k: 20 },
-  { id: 'kn4',       name: 'KN4号（回復液）',   na:  30, k: 20 },
+  { id: 'kn4',       name: 'KN4号（回復液）※K値要院内確認', na: 30, k: 20 },
   { id: 'actit',     name: 'アクチット',        na:  60, k: 20 },
   { id: 'vieen3g',   name: 'ヴィーン3G',        na:  50, k: 20 },
   { id: 'physio35',  name: 'フィジオ35',        na:  35, k: 20 },
@@ -958,6 +970,7 @@ function calculate() {
   const kcalOvr  = parseFloat(document.getElementById('kcal-override').value);
   const fluidTot = parseFloat(document.getElementById('fluid-total').value) || 2000;
   const fatPct   = parseFloat(document.getElementById('fat-ratio').value) / 100;
+  const refeedManual = document.getElementById('refeed-manual').checked;
   const oralKcal = parseFloat(document.getElementById('oral-kcal').value) || 0;
 
   if (!height || !weight) { clearResults(); return; }
@@ -974,8 +987,11 @@ function calculate() {
   // ─ カロリー目標 ─────────────────────────────────────
   const kcalPerKgMap = { 'icu-early': 20, 'icu-late': 25, 'ward': 27.5, 'ward-high': 32.5 };
   const kcalPerKg = kcalPerKgMap[setting] || 25;
+  // ICU急性期（Day1-3）はJCCNG2024が初期からの過剰投与を非推奨としているため
+  // ストレス係数を適用しない（permissive underfeeding・過剰栄養防止）
+  const stressApplied = setting === 'icu-early' ? 1.0 : stress;
   const totalKcal = isNaN(kcalOvr)
-    ? Math.round(kcalPerKg * calcBW * stress)
+    ? Math.round(kcalPerKg * calcBW * stressApplied)
     : kcalOvr;
   const ivKcal = Math.max(0, totalKcal - oralKcal);
 
@@ -992,8 +1008,8 @@ function calculate() {
   const fatG        = Math.round(fatKcal / 9);
   const glucoseG    = Math.round(glucoseKcal / 4);
 
-  // ─ GIR ───────────────────────────────────────────────
-  const gir = (glucoseG * 1000) / (calcBW * 24 * 60);
+  // ─ GIR（投与時間を反映。infuseHoursは製剤選択タブの投与時間設定） ──
+  const gir = (glucoseG * 1000) / (calcBW * infuseHours * 60);
 
   // ─ NPC/N 比 ──────────────────────────────────────────
   const nG       = targetProt / 6.25;
@@ -1017,10 +1033,10 @@ function calculate() {
   R = {
     height, weight, bmi, ibw, calcBW,
     totalKcal, ivKcal, oralKcal,
-    targetProt, protRange, kcalPerKg, stress,
+    targetProt, protRange, kcalPerKg, stress, stressApplied,
     glucoseG, fatG, fatPct, aaG: targetProt,
     gir, npcnRatio, nG,
-    recRoute, duration, setting, fluidTot,
+    recRoute, duration, setting, fluidTot, refeedManual,
   };
 
   renderBWInfo();
@@ -1095,7 +1111,8 @@ function renderTargets() {
         </tr>
         <tr>
           <td>総目標カロリー</td>
-          <td>${R.kcalPerKg} kcal/kg × ${R.calcBW} kg × ストレス係数 ${R.stress}</td>
+          <td>${R.kcalPerKg} kcal/kg × ${R.calcBW} kg × ストレス係数 ${R.stressApplied}
+            ${R.setting === 'icu-early' ? '<br><small style="color:var(--orange-mid)">⚠️ ICU急性期はストレス係数を適用せず1.0固定（JCCNG2024：初期からの過剰投与は非推奨）</small>' : ''}</td>
           <td><strong>${R.totalKcal} kcal/日</strong></td>
         </tr>
         ${R.oralKcal > 0 ? `<tr>
@@ -1148,7 +1165,7 @@ function renderTargets() {
   document.getElementById('npcn-content').innerHTML = `
     <div class="gir-box">
       <div class="gir-row">
-        <span class="gir-label">GIR（グルコース投与速度）</span>
+        <span class="gir-label">GIR（グルコース投与速度・${infuseHours}h投与換算）</span>
         <span class="gir-val ${girColor}">${R.gir.toFixed(2)} mg/kg/min</span>
       </div>
       <div class="progress-wrap">
@@ -1548,10 +1565,11 @@ function buildRecommendSection() {
               <td>${badge(plan.fat, R.fatG, 'g')}</td>
             </tr>` : ''}
             <tr>
-              <td style="color:var(--gray-600);">GIR</td>
+              <td style="color:var(--gray-600);">GIR<br><small style="font-weight:400;">（24h持続前提）</small></td>
               <td><strong>${girVal} mg/kg/min</strong>
                 ${girOk ? '<span style="color:#276749">✅</span>'
-                        : '<span style="color:#c53030">⚠️ 上限超過</span>'}</td>
+                        : '<span style="color:#c53030">⚠️ 上限超過</span>'}
+                <br><small style="color:var(--gray-600)">実際の投与時間を短縮する場合はGIRが上昇するため、製剤選択タブで実投与時間設定後のGIRを再確認してください。</small></td>
             </tr>
           </tbody>
         </table>
@@ -1678,6 +1696,11 @@ function setInfuseHours(h) {
     const infoEl = document.getElementById('ml-info-' + f.id);
     if (infoEl) infoEl.innerHTML = buildMlInfo(f, formMl[f.id] || 0);
   });
+  // GIRはinfuseHours依存のため栄養目標タブのR.girも再計算・再描画
+  if (R) {
+    R.gir = (R.glucoseG * 1000) / (R.calcBW * infuseHours * 60);
+    renderTargets();
+  }
   renderFormulationResult();
   renderOrderSheet();
 }
@@ -1738,7 +1761,7 @@ function renderFormulationResult() {
   const totalRate = (total.volume / infuseHours).toFixed(1);
 
   const girSel = R && total.glucose > 0
-    ? (total.glucose * 1000) / (R.calcBW * 24 * 60)
+    ? (total.glucose * 1000) / (R.calcBW * infuseHours * 60)
     : null;
   const girCls = girSel == null ? '' :
     girSel > 5 ? 'gir-danger' : girSel > 4.5 ? 'gir-warn' : 'gir-ok';
@@ -1836,7 +1859,7 @@ function renderFormulationResult() {
     ${girSel != null ? `
     <div class="gir-box" style="margin-top:8px;">
       <div class="gir-row">
-        <span class="gir-label">GIR（入力製剤）</span>
+        <span class="gir-label">GIR（入力製剤・${infuseHours}h投与）</span>
         <span class="gir-val ${girCls}">${girSel.toFixed(2)} mg/kg/min</span>
       </div>
       <div class="progress-wrap">
@@ -1857,7 +1880,7 @@ function renderProtocol() {
   // ── リフィーディング高リスク判定（NICE/JSPEN基準）──────────
   // BMI < 16: 高度低栄養 → ハイリスク確定
   // ICU + BMI < 18.5: 低栄養 + 急性疾患 → ハイリスク
-  const isRefeedingHighRisk = R.bmi < 16 || (isICU && R.bmi < 18.5);
+  const isRefeedingHighRisk = R.bmi < 16 || (isICU && R.bmi < 18.5) || R.refeedManual;
   const startKcalHiRisk = Math.round(10 * R.calcBW); // 10 kcal/kg/日
 
   let days;
@@ -1907,9 +1930,12 @@ function renderProtocol() {
     </div>`).join('');
 
   // リフィーディング高リスク時の警告バナー（プロトコルと完全に整合）
+  const refeedReason = R.refeedManual && !(R.bmi < 16 || (isICU && R.bmi < 18.5))
+    ? '手動指定'
+    : `BMI ${R.bmi.toFixed(1)}`;
   const refeedBanner = isRefeedingHighRisk ? `
     <div class="alert alert-danger" style="margin-bottom:10px;">
-      🔴 <strong>リフィーディング症候群 ハイリスク（BMI ${R.bmi.toFixed(1)}）</strong><br>
+      🔴 <strong>リフィーディング症候群 ハイリスク（${refeedReason}）</strong><br>
       NICE / JSPEN / ASPEN ガイドライン準拠：
       <strong>Day 1–2 は 10 kcal/kg/日以下（≤${startKcalHiRisk} kcal）で開始</strong>し、
       4–7日かけて段階的に目標カロリー（${tgt} kcal/日）へ増量してください。<br>
@@ -2423,6 +2449,10 @@ function renderOrderSheet() {
         </tbody>
       </table>
     </div>
+
+    <div class="alert alert-warning" style="font-size:11px;margin-top:10px;">
+      ⚠️ 本ツールの計算値はガイドラインおよびAIの医学知識に基づく参考値です。実際の処方は担当医が責任を持って判断してください。施設プロトコルと照合し、必要に応じて調整してください。
+    </div>
   `;
 
   el.innerHTML = html;
@@ -2464,6 +2494,7 @@ function resetForm() {
   document.getElementById('route').value        = 'auto';
   document.getElementById('duration').value     = 'mid';
   document.getElementById('fat-ratio').value    = '20';
+  document.getElementById('refeed-manual').checked = false;
   FORMULATIONS.forEach(f => {
     formMl[f.id] = 0;
     const inp = document.getElementById('ml-' + f.id);
