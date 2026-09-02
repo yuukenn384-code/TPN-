@@ -1,27 +1,35 @@
 # HANDOVER — 経管栄養プラン作成ツール
 
 > **対応プロジェクト**：経管栄養ツール（TPN/PPNツールは別ファイル `HANDOVER_TPNツール.md` を参照）
-> **最終更新**：2026年5月14日
+> **最終更新**：2026年5月14日（本文の設計内容）／2026-09-03 に置き場所・ファイル名の記述を現行構成へ更新
 
 ---
 
-## ツールファイル
+## ファイル構成
 
-| ファイル名 | 説明 | 保存場所 |
-|---|---|---|
-| `enteral_nutrition_planner.html` | 経管栄養プラン作成ツール（旧版・変更なし） | iCloud Drive / 経管栄養・TPNツール / |
-| `enteral_nutrition_planner_v2.html` | 改良版（本メモの対象・約1999行） | iCloud Drive / 経管栄養・TPNツール / |
+| ファイル | 内容 |
+|---|---|
+| `enteral.html` | 経管栄養プラン作成ツール（本メモの対象・約2099行） |
+| `tpn.html` | TPN/PPNプラン作成ツール（別メモ `HANDOVER_TPNツール.md`） |
+| `index.html` | ランチャー（両ツールへのリンク） |
 
-ブラウザで直接開いて使用（インターネット接続不要）。
+- **正本**：GitHub `yuukenn384-code/TPN-`（GitHub Pages公開）。編集は `~/TPN-` クローンに一本化（clone→編集→push→Pages反映）。iCloud実体・手元コピーは作らない（2026-06-13〜）
+- **公開URL（iPhone実機OK・PWA）**：https://yuukenn384-code.github.io/TPN-/
+- ブラウザで直接開いて使用（サーバー不要・オフライン動作）
 
 ---
 
-## 新しいチャットへの依頼テンプレート
+## 新しいチャットでの引き継ぎ方
+
+1. `~/TPN-` をクローン済みか確認（未なら `git clone https://github.com/yuukenn384-code/TPN-.git ~/TPN-`）、`git pull` で最新化
+2. 以下のように伝える：
 
 ```
-HANDOVER_経管栄養ツール.mdを読んでenteral_nutrition_planner_v2.htmlを改善しようと思います。
+HANDOVER_経管栄養ツール.mdを読んでenteral.htmlを改善しようと思います。
 まずは確認をしてください。次に改善点を相談させていただきます。
 ```
+
+3. 改訂の共通フローは `Skills/ツール改訂.md`（AI-Company社内）。医療系は関所②でmedical-qa（医療品質チェック）必須。
 
 ---
 
